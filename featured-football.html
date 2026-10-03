@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, initial-scale=1">
+  <title>PVHSN • Featured Football</title>
+  <style>
+    :root {
+      --ink: #f4f1eb;
+      --muted: #9ea5ad;
+      --line: rgba(255,255,255,.14);
+      --panel: rgba(8, 11, 15, .68);
+      --red: #d64040;
+      --gold: #f2bd54;
+      --away: #a71930;
+      --away-deep: #230d17;
+      --home: #c9a45c;
+      --home-deep: #17130d;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #080a0d; color: var(--ink); font-family: Arial, Helvetica, sans-serif; }
+    body { background: radial-gradient(ellipse at 50% -16%, #30333a 0, #11151b 38%, #080a0d 78%); }
+    .screen { position: relative; height: 100%; overflow: hidden; }
+    .screen::before { content: ""; position: absolute; inset: 0; opacity: .12; pointer-events: none; background-image: linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px); background-size: 78px 78px; mask-image: linear-gradient(to bottom, #000, transparent 76%); }
+    .masthead { position: relative; height: 112px; padding: 25px 82px 22px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); background: rgba(7,9,12,.82); }
+    .brand { display: flex; align-items: center; gap: 21px; }
+    .brand-mark { width: 58px; height: 58px; border: 2px solid var(--gold); display: grid; place-items: center; color: var(--gold); font-weight: 900; font-size: 14px; letter-spacing: 1px; transform: skew(-9deg); }
+    .brand-name { font-size: 31px; font-weight: 900; letter-spacing: 4px; line-height: 1; }
+    .brand-sub { margin-top: 8px; color: #aeb1b5; font-size: 17px; font-weight: 700; letter-spacing: 2px; }
+    .location { text-align: right; color: var(--muted); font-size: 14px; line-height: 1.55; letter-spacing: 1.35px; font-weight: 700; }
+    .location strong { display: block; color: var(--ink); font-size: 22px; letter-spacing: 3px; }
+    .location .contact { display: block; margin-top: 5px; color: #b7bdc3; font-size: 14px; letter-spacing: 1px; }
+    .hero { position: relative; height: 500px; display: grid; grid-template-columns: 1fr 310px 1fr; align-items: stretch; padding: 52px 82px 26px; }
+    .team { position: relative; display: flex; align-items: center; gap: 29px; min-width: 0; }
+    .team.away { justify-content: flex-end; text-align: right; padding-right: 42px; }
+    .team.home { justify-content: flex-start; text-align: left; padding-left: 42px; }
+    .team::after { content: ""; position: absolute; top: 10px; bottom: 10px; width: 4px; opacity: .9; }
+    .team.away::after { right: 0; background: linear-gradient(transparent, var(--away), transparent); }
+    .team.home::after { left: 0; background: linear-gradient(transparent, var(--home), transparent); }
+    .team-copy { min-width: 0; }
+    .team-city { color: #b0b6bc; font-size: 22px; font-weight: 800; letter-spacing: 5px; text-transform: uppercase; }
+    .team-name { margin-top: 9px; font-size: 67px; font-weight: 900; letter-spacing: 2px; line-height: .92; text-transform: uppercase; white-space: nowrap; }
+    .team-record { margin-top: 18px; color: var(--gold); font-size: 20px; font-weight: 800; letter-spacing: 2px; }
+    .team-badge { width: 130px; height: 130px; flex: 0 0 130px; display: grid; place-items: center; border: 4px solid currentColor; font-size: 33px; font-weight: 900; letter-spacing: 2px; transform: skew(-8deg); box-shadow: 0 0 0 9px rgba(255,255,255,.035), 0 12px 28px rgba(0,0,0,.35); overflow: hidden; }
+    .team-badge img { width: 94px; height: 94px; object-fit: contain; transform: skew(8deg); filter: drop-shadow(0 5px 7px rgba(0,0,0,.38)); }
+    .team-badge .badge-initials { transform: skew(8deg); }
+    .team-badge.logo-failed img { display: none; }
+    .away .team-badge { color: #f05a65; background: linear-gradient(135deg, var(--away), var(--away-deep)); }
+    .home .team-badge { color: #f3d792; background: linear-gradient(135deg, #4b3b1d, var(--home-deep)); }
+    .center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+    .event-kicker { color: var(--gold); font-size: 17px; letter-spacing: 4px; font-weight: 900; }
+    .vs { margin: 12px 0 13px; font-size: 76px; font-weight: 900; font-style: italic; letter-spacing: -4px; }
+    .kickoff { color: var(--ink); font-size: 23px; font-weight: 900; letter-spacing: 1px; }
+    .venue { margin-top: 9px; color: var(--muted); font-size: 15px; letter-spacing: 1.5px; }
+    .live-label { margin-top: 20px; display: inline-flex; gap: 8px; align-items: center; color: #f6d68c; border: 1px solid rgba(242,189,84,.45); padding: 8px 13px; font-size: 12px; font-weight: 900; letter-spacing: 2px; }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 10px var(--gold); }
+    .info-shell { position: relative; margin: 0 82px; height: 355px; border: 1px solid var(--line); background: linear-gradient(110deg, rgba(55,17,28,.78), rgba(10,13,18,.76) 46%, rgba(39,30,13,.78)); box-shadow: 0 18px 44px rgba(0,0,0,.24); }
+    .tabs { height: 64px; display: flex; border-bottom: 1px solid var(--line); background: rgba(3,5,8,.34); }
+    .tab { flex: 1; display: grid; place-items: center; color: #838a92; font-size: 15px; font-weight: 900; letter-spacing: 2px; border: 0; border-right: 1px solid var(--line); background: transparent; cursor: pointer; }
+    .tab:last-child { border-right: 0; }
+    .tab.active { color: var(--ink); background: linear-gradient(180deg, rgba(214,64,64,.3), transparent); box-shadow: inset 0 -3px 0 var(--red); }
+    .panel { height: 290px; padding: 34px 42px; }
+    .panel[hidden] { display: none; }
+    .panel-title { color: var(--gold); font-size: 17px; font-weight: 900; letter-spacing: 3px; }
+    .compare { display: grid; grid-template-columns: 1fr 145px 1fr; gap: 20px; align-items: center; margin-top: 26px; }
+    .metric { display: grid; grid-template-columns: 1fr 100px; gap: 21px; align-items: center; }
+    .metric.right { grid-template-columns: 100px 1fr; text-align: right; }
+    .metric-name { color: #bac0c5; font-size: 19px; font-weight: 800; letter-spacing: 1px; }
+    .metric-value { font-size: 39px; font-weight: 900; }
+    .away-text { color: #f05a65; }
+    .home-text { color: #f3d792; }
+    .metric-mid { text-align: center; color: #727a83; font-size: 13px; font-weight: 900; letter-spacing: 2px; }
+    .empty-note { margin-top: 18px; color: #7d858d; font-size: 15px; letter-spacing: 1px; }
+    .player-grid, .line-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 26px; }
+    .card { padding: 18px 20px; min-height: 115px; background: rgba(3,5,8,.36); border: 1px solid var(--line); }
+    .card-label { color: #7f8790; font-size: 12px; font-weight: 900; letter-spacing: 2px; }
+    .card-main { margin-top: 14px; font-size: 28px; font-weight: 900; }
+    .card-sub { margin-top: 8px; color: #9da4ab; font-size: 14px; letter-spacing: .8px; }
+    .footer { position: absolute; left: 82px; right: 82px; bottom: 23px; display: flex; justify-content: space-between; color: #757d85; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; }
+    .footer .warn { color: #a99c81; }
+    @media (max-width: 1000px) { html, body { width: 100%; height: 100%; } .masthead, .hero, .info-shell { transform-origin: top left; } }
+  </style>
+</head>
+<body>
+  <main class="screen" aria-label="PVHSN featured football board">
+    <header class="masthead">
+      <div class="brand"><div class="brand-mark">PV<br>HSN</div><div><div class="brand-name">P.V. HOUSE SPORTS NETWORK</div><div class="brand-sub">FEATURED FOOTBALL</div></div></div>
+      <div class="location"><strong>PV HOUSE • PLAYA VISTA</strong><span class="contact">12751 Millennium Dr #140 • (424) 500-8229</span></div>
+    </header>
+
+    <section class="hero">
+      <div class="team away"><div class="team-copy"><div class="team-city" id="away-city">Atlanta</div><div class="team-name" id="away-name">Falcons</div><div class="team-record" id="away-record">RECORD —</div></div><div class="team-badge" id="away-badge" aria-label="Atlanta Falcons logo"><img id="away-logo" alt="Atlanta Falcons logo"><span class="badge-initials">ATL</span></div></div>
+      <div class="center"><div class="event-kicker" id="event-label">MONDAY NIGHT FOOTBALL</div><div class="vs">VS</div><div class="kickoff" id="kickoff">MON • 5:15 PM PT</div><div class="venue" id="venue">Caesars Superdome • New Orleans, LA</div><div class="live-label"><span class="live-dot"></span><span id="air-state">FEATURED MATCHUP</span></div></div>
+      <div class="team home"><div class="team-badge" id="home-badge" aria-label="New Orleans Saints logo"><img id="home-logo" alt="New Orleans Saints logo"><span class="badge-initials">NO</span></div><div class="team-copy"><div class="team-city" id="home-city">New Orleans</div><div class="team-name" id="home-name">Saints</div><div class="team-record" id="home-record">RECORD —</div></div></div>
+    </section>
+
+    <section class="info-shell" aria-live="polite">
+      <nav class="tabs" aria-label="Matchup information"><button class="tab active" data-panel="matchup">QB MATCHUP</button><button class="tab" data-panel="compare">TEAM COMPARISON</button><button class="tab" data-panel="players">KEY PLAYERS</button><button class="tab" data-panel="line">BETTING LINE</button></nav>
+      <div class="panel" id="panel-matchup"><div class="panel-title">QUARTERBACK MATCHUP</div><div class="compare"><div class="metric"><div class="metric-name away-text" id="away-qb">ATL QB • AWAITING FEED</div><div class="metric-value" id="away-qb-stat">—</div></div><div class="metric-mid">PASS YDS<br><span style="color:#545c64">SEASON</span></div><div class="metric right"><div class="metric-value" id="home-qb-stat">—</div><div class="metric-name home-text" id="home-qb">NO QB • AWAITING FEED</div></div></div><div class="empty-note" id="qb-note">Player names and season stats populate only when a trusted data feed is connected.</div></div>
+      <div class="panel" id="panel-compare" hidden><div class="panel-title">TEAM SNAPSHOT</div><div class="compare"><div class="metric"><div class="metric-name away-text">ATLANTA</div><div class="metric-value" id="away-offense">—</div></div><div class="metric-mid">OFFENSE<br><span style="color:#545c64">PPG</span></div><div class="metric right"><div class="metric-value" id="home-offense">—</div><div class="metric-name home-text">NEW ORLEANS</div></div></div><div class="empty-note">Team comparison values remain blank until verified current data is available.</div></div>
+      <div class="panel" id="panel-players" hidden><div class="panel-title">IMPACT PLAYERS</div><div class="player-grid"><div class="card"><div class="card-label">ATLANTA • OFFENSE</div><div class="card-main" id="away-player">Awaiting current roster feed</div><div class="card-sub">No player value invented for prototype.</div></div><div class="card"><div class="card-label">NEW ORLEANS • OFFENSE</div><div class="card-main" id="home-player">Awaiting current roster feed</div><div class="card-sub">No player value invented for prototype.</div></div></div></div>
+      <div class="panel" id="panel-line" hidden><div class="panel-title">MARKET SNAPSHOT</div><div class="line-grid"><div class="card"><div class="card-label">SPREAD</div><div class="card-main" id="spread">AWAITING ODDS FEED</div><div class="card-sub">Connects to the existing Cloudflare /nfl route when available.</div></div><div class="card"><div class="card-label">TOTAL</div><div class="card-main" id="total">AWAITING ODDS FEED</div><div class="card-sub">Odds are informational only and should be refreshed before display.</div></div></div></div>
+    </section>
+    <footer class="footer"><span>PVHSN • FEATURED FOOTBALL TEMPLATE • <span id="refresh-time">AUTO-ROTATING INFO BAND</span></span><span class="warn">TEAM MARKS: INITIALS FALLBACK • USE APPROVED/LICENSED ARTWORK FOR PRODUCTION</span></footer>
+  </main>
+  <script>
+    'use strict';
+    // Swap this object for the next TNF, MNF, playoff, or featured game.
+    const PVHSN_CONFIG = window.PVHSN_CONFIG || {
+      dataEndpoint: '/nfl',
+      featuredGame: {
+        eventLabel: 'MONDAY NIGHT FOOTBALL',
+        kickoff: 'MON • 5:15 PM PT',
+        venue: 'Caesars Superdome • New Orleans, LA',
+        // ESPN CDN image URLs are used as a practical prototype source. Replace
+        // with approved/licensed local assets before public commercial display.
+        away: { city: 'Atlanta', name: 'Falcons', short: 'ATL', color: '#a71930', logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/atl.png' },
+        home: { city: 'New Orleans', name: 'Saints', short: 'NO', color: '#c9a45c', logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/no.png' }
+      }
+    };
+    const $ = id => document.getElementById(id);
+    const set = (id, value) => { const element = $(id); if (element && value !== undefined && value !== null && value !== '') element.textContent = value; };
+    function render(game) {
+      const away = game.away || {}, home = game.home || {};
+      set('event-label', game.eventLabel || 'FEATURED FOOTBALL'); set('kickoff', game.kickoff || 'KICKOFF TBD'); set('venue', game.venue || 'VENUE TBD');
+      set('away-city', away.city); set('away-name', away.name); set('away-record', away.record ? 'RECORD ' + away.record : 'RECORD —');
+      set('home-city', home.city); set('home-name', home.name); set('home-record', home.record ? 'RECORD ' + home.record : 'RECORD —');
+      $('away-badge').querySelector('.badge-initials').textContent = away.short || 'AWY';
+      $('home-badge').querySelector('.badge-initials').textContent = home.short || 'HME';
+      if (away.color) $('away-badge').style.borderColor = away.color; if (home.color) $('home-badge').style.borderColor = home.color;
+      setLogo('away', away.logo, away.name || 'away team'); setLogo('home', home.logo, home.name || 'home team');
+      if (game.status) set('air-state', game.status);
+      if (game.qb) { set('away-qb', game.qb.awayName || 'ATL QB'); set('home-qb', game.qb.homeName || 'NO QB'); set('away-qb-stat', game.qb.awayStat || '—'); set('home-qb-stat', game.qb.homeStat || '—'); }
+      if (game.odds) { set('spread', game.odds.spread || 'AWAITING ODDS FEED'); set('total', game.odds.total || 'AWAITING ODDS FEED'); }
+    }
+    function setLogo(side, url, label) {
+      const badge = $(side + '-badge'); const image = $(side + '-logo');
+      image.alt = label + ' logo'; badge.classList.toggle('logo-failed', !url); image.onload = () => badge.classList.remove('logo-failed'); image.onerror = () => badge.classList.add('logo-failed');
+      if (url) image.src = url; else image.removeAttribute('src');
+    }
+    render(PVHSN_CONFIG.featuredGame);
+    async function loadLiveData() {
+      if (!PVHSN_CONFIG.dataEndpoint) return;
+      try {
+        const response = await fetch(PVHSN_CONFIG.dataEndpoint, { cache: 'no-store' });
+        if (!response.ok) throw new Error('data route unavailable');
+        const payload = await response.json();
+        const games = Array.isArray(payload) ? payload : (payload.games || []);
+        const target = games.find(g => /Atlanta Falcons/i.test((g.away_team || '') + ' ' + (g.home_team || '')) && /New Orleans Saints/i.test((g.away_team || '') + ' ' + (g.home_team || '')));
+        if (!target) return;
+        const market = target.bookmakers?.[0]?.markets || [];
+        const spreadMarket = market.find(m => m.key === 'spreads'); const totalMarket = market.find(m => m.key === 'totals');
+        const first = m => m?.outcomes?.[0];
+        render({ ...PVHSN_CONFIG.featuredGame, sourceLabel: 'LIVE DATA • ODDS API VIA CLOUDFLARE', odds: { spread: first(spreadMarket) ? `${first(spreadMarket).name} ${first(spreadMarket).point > 0 ? '+' : ''}${first(spreadMarket).point}` : undefined, total: first(totalMarket) ? `${first(totalMarket).point}` : undefined } });
+      } catch (error) { /* Safe prototype fallback: keep placeholders visible. */ }
+    }
+    const tabs = [...document.querySelectorAll('.tab')]; const panels = [...document.querySelectorAll('.panel')]; let index = 0;
+    function activate(next) { index = next % tabs.length; tabs.forEach((tab, i) => { const active = i === index; tab.classList.toggle('active', active); const panel = $('panel-' + tab.dataset.panel); panel.hidden = !active; }); }
+    tabs.forEach((tab, i) => tab.addEventListener('click', () => activate(i)));
+    setInterval(() => activate(index + 1), 8000); loadLiveData();
+  </script>
+</body>
+</html>
