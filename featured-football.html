@@ -90,13 +90,13 @@
 
     <section class="hero">
       <div class="team away"><div class="team-copy"><div class="team-city" id="away-city">Atlanta</div><div class="team-name" id="away-name">Falcons</div><div class="team-record" id="away-record">RECORD —</div></div><div class="team-badge" id="away-badge" aria-label="Atlanta Falcons logo"><img id="away-logo" alt="Atlanta Falcons logo"><span class="badge-initials">ATL</span></div></div>
-      <div class="center"><div class="event-kicker" id="event-label">MONDAY NIGHT FOOTBALL</div><div class="vs">VS</div><div class="kickoff" id="kickoff">MON • 5:15 PM PT</div><div class="venue" id="venue">Caesars Superdome • New Orleans, LA</div><div class="live-label"><span class="live-dot"></span><span id="air-state">FEATURED MATCHUP</span></div></div>
+      <div class="center"><div class="event-kicker" id="event-label">MONDAY NIGHT FOOTBALL</div><div class="vs" id="scoreline">VS</div><div class="kickoff" id="kickoff">MON • 5:15 PM PT</div><div class="venue" id="venue">Caesars Superdome • New Orleans, LA</div><div class="live-label"><span class="live-dot"></span><span id="air-state">FEATURED MATCHUP</span></div></div>
       <div class="team home"><div class="team-badge" id="home-badge" aria-label="New Orleans Saints logo"><img id="home-logo" alt="New Orleans Saints logo"><span class="badge-initials">NO</span></div><div class="team-copy"><div class="team-city" id="home-city">New Orleans</div><div class="team-name" id="home-name">Saints</div><div class="team-record" id="home-record">RECORD —</div></div></div>
     </section>
 
     <section class="info-shell" aria-live="polite">
       <nav class="tabs" aria-label="Matchup information"><button class="tab active" data-panel="matchup">QB MATCHUP</button><button class="tab" data-panel="compare">TEAM COMPARISON</button><button class="tab" data-panel="players">KEY PLAYERS</button><button class="tab" data-panel="line">BETTING LINE</button></nav>
-      <div class="panel" id="panel-matchup"><div class="panel-title">QUARTERBACK MATCHUP</div><div class="compare"><div class="metric"><div class="metric-name away-text" id="away-qb">ATL QB • AWAITING FEED</div><div class="metric-value" id="away-qb-stat">—</div></div><div class="metric-mid">PASS YDS<br><span style="color:#545c64">SEASON</span></div><div class="metric right"><div class="metric-value" id="home-qb-stat">—</div><div class="metric-name home-text" id="home-qb">NO QB • AWAITING FEED</div></div></div><div class="empty-note" id="qb-note">Player names and season stats populate only when a trusted data feed is connected.</div></div>
+      <div class="panel" id="panel-matchup"><div class="panel-title">QUARTERBACK MATCHUP</div><div class="compare"><div class="metric"><div class="metric-name away-text" id="away-qb">ATL QB • AWAITING FEED</div><div class="metric-value" id="away-qb-stat">—</div></div><div class="metric-mid">PASSING<br><span style="color:#545c64">GAME</span></div><div class="metric right"><div class="metric-value" id="home-qb-stat">—</div><div class="metric-name home-text" id="home-qb">NO QB • AWAITING FEED</div></div></div><div class="empty-note" id="qb-note">Current-game leaders populate when ESPN returns a verified matchup.</div></div>
       <div class="panel" id="panel-compare" hidden><div class="panel-title">TEAM SNAPSHOT</div><div class="compare"><div class="metric"><div class="metric-name away-text">ATLANTA</div><div class="metric-value" id="away-offense">—</div></div><div class="metric-mid">OFFENSE<br><span style="color:#545c64">PPG</span></div><div class="metric right"><div class="metric-value" id="home-offense">—</div><div class="metric-name home-text">NEW ORLEANS</div></div></div><div class="empty-note">Team comparison values remain blank until verified current data is available.</div></div>
       <div class="panel" id="panel-players" hidden><div class="panel-title">IMPACT PLAYERS</div><div class="player-grid"><div class="card"><div class="card-label">ATLANTA • OFFENSE</div><div class="card-main" id="away-player">Awaiting current roster feed</div><div class="card-sub">No player value invented for prototype.</div></div><div class="card"><div class="card-label">NEW ORLEANS • OFFENSE</div><div class="card-main" id="home-player">Awaiting current roster feed</div><div class="card-sub">No player value invented for prototype.</div></div></div></div>
       <div class="panel" id="panel-line" hidden><div class="panel-title">MARKET SNAPSHOT</div><div class="line-grid"><div class="card"><div class="card-label">SPREAD</div><div class="card-main" id="spread">AWAITING ODDS FEED</div><div class="card-sub">Connects to the existing Cloudflare /nfl route when available.</div></div><div class="card"><div class="card-label">TOTAL</div><div class="card-main" id="total">AWAITING ODDS FEED</div><div class="card-sub">Odds are informational only and should be refreshed before display.</div></div></div></div>
@@ -131,6 +131,19 @@
       setLogo('away', away.logo, away.name || 'away team'); setLogo('home', home.logo, home.name || 'home team');
       if (game.status) set('air-state', game.status);
       if (game.qb) { set('away-qb', game.qb.awayName || 'ATL QB'); set('home-qb', game.qb.homeName || 'NO QB'); set('away-qb-stat', game.qb.awayStat || '—'); set('home-qb-stat', game.qb.homeStat || '—'); }
+      if (game.espn) {
+        set('air-state', game.espn.status || (game.espn.state === 'in' ? 'LIVE' : 'FEATURED MATCHUP'));
+        set('venue', game.espn.venue || game.venue);
+        set('away-record', game.espn.away.record ? `RECORD ${game.espn.away.record}` : 'RECORD —');
+        set('home-record', game.espn.home.record ? `RECORD ${game.espn.home.record}` : 'RECORD —');
+        if (game.espn.away.score !== null && game.espn.home.score !== null) set('scoreline', `${game.espn.away.score}  —  ${game.espn.home.score}`);
+        const awayLeader = game.espn.away.passingLeader; const homeLeader = game.espn.home.passingLeader;
+        if (awayLeader || homeLeader) {
+          set('away-qb', awayLeader?.name || 'ATL QB • AWAITING FEED'); set('away-qb-stat', awayLeader?.stat || '—');
+          set('home-qb', homeLeader?.name || 'NO QB • AWAITING FEED'); set('home-qb-stat', homeLeader?.stat || '—');
+          set('away-player', awayLeader?.name || 'Awaiting current roster feed'); set('home-player', homeLeader?.name || 'Awaiting current roster feed');
+        }
+      }
       if (game.odds) { set('spread', game.odds.spread || 'AWAITING ODDS FEED'); set('total', game.odds.total || 'AWAITING ODDS FEED'); }
     }
     function setLogo(side, url, label) {
@@ -151,13 +164,13 @@
         const market = target.bookmakers?.[0]?.markets || [];
         const spreadMarket = market.find(m => m.key === 'spreads'); const totalMarket = market.find(m => m.key === 'totals');
         const first = m => m?.outcomes?.[0];
-        render({ ...PVHSN_CONFIG.featuredGame, sourceLabel: 'LIVE DATA • ODDS API VIA CLOUDFLARE', odds: { spread: first(spreadMarket) ? `${first(spreadMarket).name} ${first(spreadMarket).point > 0 ? '+' : ''}${first(spreadMarket).point}` : undefined, total: first(totalMarket) ? `${first(totalMarket).point}` : undefined } });
+        render({ ...PVHSN_CONFIG.featuredGame, espn: target.espn, odds: { spread: first(spreadMarket) ? `${first(spreadMarket).name} ${first(spreadMarket).point > 0 ? '+' : ''}${first(spreadMarket).point}` : undefined, total: first(totalMarket) ? `${first(totalMarket).point}` : undefined } });
       } catch (error) { /* Safe prototype fallback: keep placeholders visible. */ }
     }
     const tabs = [...document.querySelectorAll('.tab')]; const panels = [...document.querySelectorAll('.panel')]; let index = 0;
     function activate(next) { index = next % tabs.length; tabs.forEach((tab, i) => { const active = i === index; tab.classList.toggle('active', active); const panel = $('panel-' + tab.dataset.panel); panel.hidden = !active; }); }
     tabs.forEach((tab, i) => tab.addEventListener('click', () => activate(i)));
-    setInterval(() => activate(index + 1), 8000); loadLiveData();
+    setInterval(() => activate(index + 1), 8000); loadLiveData(); setInterval(loadLiveData, 300000);
   </script>
 </body>
 </html>
