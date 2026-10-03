@@ -151,6 +151,14 @@
       image.alt = label + ' logo'; badge.classList.toggle('logo-failed', !url); image.onload = () => badge.classList.remove('logo-failed'); image.onerror = () => badge.classList.add('logo-failed');
       if (url) image.src = url; else image.removeAttribute('src');
     }
+    function splitTeamName(fullName, abbreviation) {
+      const words = String(fullName || '').trim().split(/\s+/); const name = words.pop() || abbreviation || 'TEAM';
+      return { city: words.join(' ') || 'NFL', name, short: abbreviation || name.slice(0, 3).toUpperCase(), logo: abbreviation ? `https://a.espncdn.com/i/teamlogos/nfl/500/${abbreviation.toLowerCase()}.png` : null };
+    }
+    function formatKickoff(value) {
+      if (!value) return 'KICKOFF TBD';
+      return new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(value)).toUpperCase() + ' PT';
+    }
     render(PVHSN_CONFIG.featuredGame);
     async function loadLiveData() {
       if (!PVHSN_CONFIG.dataEndpoint) return;
@@ -159,12 +167,13 @@
         if (!response.ok) throw new Error('data route unavailable');
         const payload = await response.json();
         const games = Array.isArray(payload) ? payload : (payload.games || []);
-        const target = games.find(g => /Atlanta Falcons/i.test((g.away_team || '') + ' ' + (g.home_team || '')) && /New Orleans Saints/i.test((g.away_team || '') + ' ' + (g.home_team || '')));
+        const target = games.find(g => /Atlanta Falcons/i.test((g.away_team || '') + ' ' + (g.home_team || '')) && /New Orleans Saints/i.test((g.away_team || '') + ' ' + (g.home_team || ''))) || games.find(g => g.espn) || games[0];
         if (!target) return;
         const market = target.bookmakers?.[0]?.markets || [];
         const spreadMarket = market.find(m => m.key === 'spreads'); const totalMarket = market.find(m => m.key === 'totals');
         const first = m => m?.outcomes?.[0];
-        render({ ...PVHSN_CONFIG.featuredGame, espn: target.espn, odds: { spread: first(spreadMarket) ? `${first(spreadMarket).name} ${first(spreadMarket).point > 0 ? '+' : ''}${first(spreadMarket).point}` : undefined, total: first(totalMarket) ? `${first(totalMarket).point}` : undefined } });
+        const away = splitTeamName(target.away_team, target.espn?.away?.abbreviation); const home = splitTeamName(target.home_team, target.espn?.home?.abbreviation);
+        render({ ...PVHSN_CONFIG.featuredGame, eventLabel: target.espn?.status ? 'FEATURED NFL • LIVE DATA' : PVHSN_CONFIG.featuredGame.eventLabel, kickoff: formatKickoff(target.commence_time), away, home, venue: target.espn?.venue || PVHSN_CONFIG.featuredGame.venue, espn: target.espn, odds: { spread: first(spreadMarket) ? `${first(spreadMarket).name} ${first(spreadMarket).point > 0 ? '+' : ''}${first(spreadMarket).point}` : undefined, total: first(totalMarket) ? `${first(totalMarket).point}` : undefined } });
       } catch (error) { /* Safe prototype fallback: keep placeholders visible. */ }
     }
     const tabs = [...document.querySelectorAll('.tab')]; const panels = [...document.querySelectorAll('.panel')]; let index = 0;
