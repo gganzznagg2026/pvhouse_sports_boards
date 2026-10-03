@@ -128,7 +128,7 @@
       $('away-badge').querySelector('.badge-initials').textContent = away.short || 'AWY';
       $('home-badge').querySelector('.badge-initials').textContent = home.short || 'HME';
       if (away.color) $('away-badge').style.borderColor = away.color; if (home.color) $('home-badge').style.borderColor = home.color;
-      setLogo('away', away.logo, away.name || 'away team'); setLogo('home', home.logo, home.name || 'home team');
+      setLogo('away', away.logo, away.name || 'away team', away.short); setLogo('home', home.logo, home.name || 'home team', home.short);
       if (game.status) set('air-state', game.status);
       if (game.qb) { set('away-qb', game.qb.awayName || 'ATL QB'); set('home-qb', game.qb.homeName || 'NO QB'); set('away-qb-stat', game.qb.awayStat || '—'); set('home-qb-stat', game.qb.homeStat || '—'); }
       if (game.espn) {
@@ -146,10 +146,11 @@
       }
       if (game.odds) { set('spread', game.odds.spread || 'AWAITING ODDS FEED'); set('total', game.odds.total || 'AWAITING ODDS FEED'); }
     }
-    function setLogo(side, url, label) {
+    function setLogo(side, url, label, code) {
       const badge = $(side + '-badge'); const image = $(side + '-logo');
-      image.alt = label + ' logo'; badge.classList.toggle('logo-failed', !url); image.onload = () => badge.classList.remove('logo-failed'); image.onerror = () => badge.classList.add('logo-failed');
-      if (url) image.src = url; else image.removeAttribute('src');
+      const local = code ? `pvhsn-assets/nfl/${code.toLowerCase()}.png` : null;
+      image.alt = label + ' logo'; badge.classList.toggle('logo-failed', !local && !url); image.onload = () => badge.classList.remove('logo-failed'); image.onerror = () => { if (url && image.src !== url) image.src = url; else badge.classList.add('logo-failed'); };
+      if (local) image.src = local; else if (url) image.src = url; else image.removeAttribute('src');
     }
     function splitTeamName(fullName, abbreviation) {
       const words = String(fullName || '').trim().split(/\s+/); const name = words.pop() || abbreviation || 'TEAM';
