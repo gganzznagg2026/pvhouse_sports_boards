@@ -19,6 +19,10 @@ export default {
       return fetchNcaaRankings();
     }
 
+    if (url.pathname === "/nfl-standings") {
+      return fetchNflStandings();
+    }
+
     let sportKey = null;
 
     if (url.pathname === "/ncaaf") {
@@ -220,6 +224,7 @@ const LOCAL_MLB_TEAMS = {
 };
 
 const NCAA_RANKINGS_URL = "https://www.ncaa.com/rankings/football/fbs/associated-press";
+const NFL_STANDINGS_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/standings";
 const NCAA_LOGO_SLUGS = {
   "Texas": "texas",
   "Georgia": "georgia",
@@ -307,6 +312,23 @@ async function fetchNcaaRankings() {
     return jsonResponse({ source: NCAA_RANKINGS_URL, through, updatedAt: new Date().toISOString(), rankings }, 200, 300);
   } catch (error) {
     return jsonResponse({ error: error.message }, 500);
+  }
+}
+
+async function fetchNflStandings() {
+  try {
+    const response = await fetch(NFL_STANDINGS_URL, {
+      headers: { "User-Agent": "PVHSN/1.0 standings display" }
+    });
+
+    if (!response.ok) {
+      return jsonResponse({ error: "NFL standings request failed", status: response.status }, response.status);
+    }
+
+    const payload = await response.json();
+    return jsonResponse(payload, 200, 60);
+  } catch (error) {
+    return jsonResponse({ error: error.message }, 502);
   }
 }
 
