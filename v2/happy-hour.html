@@ -27,7 +27,7 @@
   .clockbox .big{font-family:"BC";font-weight:800;font-size:112px;line-height:1;letter-spacing:4px;color:var(--amber);margin-top:4px}
   .clockbox .sub{font-family:"BC";font-weight:700;font-size:24px;letter-spacing:4px;color:var(--ink);margin-top:6px}
   .clockbox.live{border-color:rgba(255,90,79,.55)}
-  .clockbox.live .big{color:var(--ink)}
+  .clockbox.live .big{color:var(--red)}
   .clockbox.live .lbl{color:var(--red)}
   .clockbox .bar{position:absolute;left:0;right:0;bottom:0;height:8px;background:rgba(255,255,255,.06)}
   .clockbox .bar i{display:block;height:100%;background:var(--red);width:0}
@@ -126,10 +126,6 @@
       .formatToParts(n).forEach(function (x) { p[x.type] = Number(x.value); });
     return { day: day, secs: (p.hour % 24) * 3600 + p.minute * 60 + p.second };
   }
-  function hms(s) {
-    var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
-    return h + ":" + (m < 10 ? "0" : "") + m + ":" + (x < 10 ? "0" : "") + x;
-  }
   var lastDay = "";
   function drinks(day) {
     document.getElementById("sched").innerHTML = DRINKS.map(function (d) {
@@ -145,28 +141,24 @@
         sub = document.getElementById("csub"), bar = document.getElementById("cbar"), pill = document.getElementById("livepill");
     var live = weekday && t.secs >= START && t.secs < END;
     box.className = "clockbox" + (live ? " live" : "");
-    pill.style.display = live ? "" : "none";
+    pill.style.display = "none";
+    bar.style.width = live ? "100%" : "0";
     if (live) {
-      lbl.textContent = "TIME REMAINING";
-      big.textContent = hms(END - t.secs);
-      sub.textContent = "LAST CALL FOR BITES AT 6:00 PM";
-      bar.style.width = ((t.secs - START) / (END - START) * 100).toFixed(2) + "%";
-      return;
+      lbl.textContent = "HAPPY HOUR";
+      big.textContent = "LIVE NOW";
+      sub.textContent = "UNTIL 6:00 PM TODAY";
+    } else if (weekday && t.secs < START) {
+      lbl.textContent = "KICKOFF";
+      big.textContent = "TODAY";
+      sub.textContent = "3:00 \u2013 6:00 PM";
+    } else {
+      lbl.textContent = "NEXT GAME";
+      big.textContent = t.day === "FRIDAY" || !weekday ? "MONDAY" : "TOMORROW";
+      sub.textContent = "3:00 \u2013 6:00 PM";
     }
-    bar.style.width = "0";
-    if (weekday && t.secs < START) {
-      lbl.textContent = "KICKOFF IN";
-      big.textContent = hms(START - t.secs);
-      sub.textContent = "TODAY AT 3:00 PM";
-      return;
-    }
-    // After 6 PM on a weekday, or the weekend
-    lbl.textContent = weekday ? "FINAL • NEXT GAME" : "NEXT GAME";
-    big.textContent = t.day === "FRIDAY" || !weekday ? "MONDAY" : "TOMORROW";
-    sub.textContent = "3:00 – 6:00 PM • MONDAY – FRIDAY";
   }
   tick();
-  setInterval(tick, 1000);
+  setInterval(tick, 60 * 1000);
 })();
 </script>
 </body>
