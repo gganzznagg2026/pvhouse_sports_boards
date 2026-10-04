@@ -109,8 +109,8 @@
   PV.updated = function (res) {
     var el = document.getElementById("updated");
     if (!el || !res) return;
-    var t = PV.fmt(new Date(res.at), { hour: "numeric", minute: "2-digit" });
-    el.textContent = (res.stale ? "LAST UPDATE " : "UPDATED ") + t;
+    var t = PV.fmt(new Date(res.at), res.stale ? { weekday: "short", hour: "numeric", minute: "2-digit" } : { hour: "numeric", minute: "2-digit" });
+    el.textContent = (res.stale ? "OFFLINE \u2022 LAST UPDATE " : "UPDATED ") + t.toUpperCase();
     el.className = "upd" + (res.stale ? " stale" : "");
   };
 
