@@ -163,10 +163,12 @@
     if (st === "final") {
       var d = g.decisions || {};
       f = [["WINNING PITCHER", get(d, "winner.fullName")], ["LOSING PITCHER", get(d, "loser.fullName")], ["SAVE", get(d, "save.fullName") || "NONE"]];
+      if (POSTSEASON[g.gameType]) f.push(["SERIES", seriesLine(g)]);
       if (nextText(g)) f.push(["NEXT GAME", nextText(g)]);
     } else if (st === "live") {
       f = [["PITCHING", get(ls, "defense.pitcher.fullName")], ["AT BAT", get(ls, "offense.batter.fullName")],
         ["COUNT", (ls.balls != null ? ls.balls + "-" + ls.strikes : "–") + (ls.outs != null ? "  •  " + ls.outs + " OUT" + (ls.outs === 1 ? "" : "S") : "")]];
+      if (POSTSEASON[g.gameType]) f.push(["SERIES", seriesLine(g)]);
     } else {
       f = [["FIRST PITCH", PV.fmt(new Date(g.gameDate), { weekday: "short" }).toUpperCase() + " " + PV.timePT(g.gameDate)],
         ["BALLPARK", get(g, "venue.name")], ["SERIES", seriesLine(g)]];
@@ -174,8 +176,9 @@
     var facts = '<div class="facts" style="grid-template-columns:repeat(' + f.length + ',1fr)">' + f.map(function (x) { return '<div class="fact"><label>' + x[0] + "</label><div>" + PV.esc(String(x[1] || "–").toUpperCase()) + "</div></div>"; }).join("") + "</div>";
 
     document.getElementById("main").innerHTML =
-      '<div class="banner"><h1>' + seriesTitle(g) + '</h1><div class="sub"><b>' + PV.esc(seriesLine(g)) + "</b><span>" +
-      PV.esc(String(get(g, "venue.name") || "").toUpperCase()) + (g.doubleHeader && g.doubleHeader !== "N" ? " &bull; DOUBLEHEADER GAME " + (g.gameNumber || 1) : "") + (games.length > 1 ? " &bull; " + (shown + 1) + " OF " + games.length + " GAMES TODAY" : "") + "</span></div></div>" +
+      '<div class="banner"><h1>' + seriesTitle(g) + '</h1><div class="sub"><b>' + "</b>" +
+      // series score and ballpark live in the cards below; only a doubleheader gets a note up here
+      (g.doubleHeader && g.doubleHeader !== "N" ? "<span>DOUBLEHEADER &bull; GAME " + (g.gameNumber || 1) + " OF 2</span>" : "") + "</div></div>" +
       '<div class="hero" style="--ac:' + (COLORS[a.id] || "#333333") + "55;--hc:" + (COLORS[h.id] || "#333333") + '55">' + teamBlock("away", g, "away") + '<div class="mid">' + mid + "</div>" + teamBlock("home", g, "home") + "</div>" +
       table + facts;
   }
