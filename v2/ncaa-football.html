@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PVHSN • College Football Scoreboard</title>
+<link rel="stylesheet" href="core/pvhsn.css">
+<style>
+  .sum{height:44px;display:flex;gap:34px;align-items:center;font-family:"BC";font-weight:700;font-size:22px;letter-spacing:3px;color:var(--dim)}
+  .sum b{color:var(--ink);font-size:26px;margin-right:8px}
+  .sum .l b{color:var(--red)} .sum .u b{color:var(--blue)}
+  .sum .pg{margin-left:auto;color:var(--faint)}
+  .sum .pager{margin:0 0 0 24px}
+  .cards{position:absolute;left:0;right:0;top:60px;bottom:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,1fr);gap:18px 24px}
+  .card{background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+  .card.live{border-color:rgba(255,90,79,.45);background:linear-gradient(180deg,rgba(255,90,79,.07),var(--panel) 40%)}
+  .tm{flex:1;display:flex;align-items:center;gap:14px;padding:0 20px 0 0;min-width:0}
+  .tm + .tm{border-top:1px solid var(--line)}
+  .tm .chip{width:8px;height:100%}
+  .rk{font-family:"BC";font-weight:700;font-size:24px;color:var(--amber);width:30px;text-align:right;flex:none}
+  .tm .logo,.tm .initials{flex:none}
+  .tn{font-family:"BC";font-weight:700;font-size:36px;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+  .rec{font-family:"BC";font-weight:600;font-size:20px;color:var(--faint);letter-spacing:1px;flex:none}
+  .poss{width:12px;height:12px;border-radius:50%;background:var(--amber);flex:none}
+  .sc{font-family:"BC";font-weight:800;font-size:48px;min-width:64px;text-align:right;flex:none}
+  .final .sc{color:var(--faint)} .final .win .sc,.final .win .tn{color:var(--ink)} .final .tn{color:var(--dim)}
+  .live .sc{color:var(--amber)}
+  .st{height:42px;display:flex;align-items:center;gap:14px;padding:0 20px;border-top:1px solid var(--line);background:rgba(0,0,0,.25);
+    font-family:"BC";font-weight:600;font-size:21px;letter-spacing:2px;color:var(--dim);white-space:nowrap;overflow:hidden}
+  .st .dd{color:var(--ink)}
+  .st .net{margin-left:auto;color:var(--faint)}
+  .kick{font-family:"BC";font-weight:800;font-size:40px;color:var(--blue);text-align:right;flex:none}
+</style>
+</head>
+<body>
+<div id="stage"><div class="body">
+  <div class="sum"><span id="counts" style="display:flex;gap:34px"></span><span class="pg" id="pgtxt"></span></div>
+  <div class="cards" id="cards"></div>
+</div></div>
+<script src="core/pvhsn.js"></script>
+<script>
+(function () {
+  var PER_PAGE = 12, MAX_PAGES = 6;
+  var CYCLE_MS = (Number(PV.qs("cycle")) || 48) * 1000;   // whole rotation always fits this, any game count
+  var ESPN = "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard";
+  var pager = null;
+
+  PV.frame({ title: "COLLEGE FOOTBALL &bull; <em>SCOREBOARD</em>", source: "SOURCE: ESPN" });
+  document.querySelector(".sum").appendChild(document.getElementById("pager"));
+
+  function side(c) {
+    var t = c.team || {}, rank = c.curatedRank ? Number(c.curatedRank.current) : 99, rec = "";
+    (c.records || []).forEach(function (r) { if (r.type === "total") rec = r.summary; });
+    return { id: t.id, abbr: t.abbreviation || "", la: PV.isLA("ncaa", String(t.id)), name: t.shortDisplayName || t.location || t.displayName || "TBD", color: PV.hex(t.color),
+      rank: rank > 0 && rank <= 25 ? rank : null, score: c.score, rec: rec };
+  }
+  function parse(data) {
+    return (data.events || []).map(function (e) {
+      var c = (e.competitions || [])[0] || {}, st = c.status || e.status || {}, ty = st.type || {};
+      var comp = c.competitors || [], a = null, h = null;
+      comp.forEach(function (x) { if (x.homeAway === "away") a = x; else if (x.homeAway === "home") h = x; });
+      var nets = [];
+      (c.broadcasts || []).forEach(function (b) { nets = nets.concat(b.names || []); });
+      var sit = c.situation || {};
+      return {
+        date: e.date, state: ty.state === "in" ? "in" : ty.state === "post" ? "post" : "pre",   // ESPN's own game state
+        detail: ty.shortDetail || "", net: nets.join(" / "),
+        dd: sit.shortDownDistanceText || "", poss: sit.possession || "",
+        away: side(a || comp[1] || {}), home: side(h || comp[0] || {})
+      };
+    });
+  }
+  function order(games) {
+    var rank = { "in": 0, pre: 1, post: 2 };
+    var ranked = function (g) { return g.away.rank || g.home.rank ? 0 : 1; };
+    var la = function (g) { return g.away.la || g.home.la ? 0 : 1; };
+    return games.sort(function (x, y) {
+      if (rank[x.state] !== rank[y.state]) return rank[x.state] - rank[y.state];
+      if (la(x) !== la(y)) return la(x) - la(y);                       // USC / UCLA first in each group
+      if (x.state === "post") return ranked(x) - ranked(y) || new Date(y.date) - new Date(x.date);
+      return new Date(x.date) - new Date(y.date);
+    });
+  }
+  function teamRow(t, g, isWin) {
+    var right = g.state === "pre" ? "" : '<div class="sc num">' + PV.esc(t.score) + "</div>";
+    return '<div class="tm' + (isWin ? " win" : "") + '"><span class="chip" style="background:' + t.color + '"></span>' +
+      '<span class="rk num">' + (t.rank ? t.rank : "") + "</span>" + PV.logo("ncaa", t.id, t.abbr, t.color, 46) +
+      '<span class="tn">' + PV.esc(t.name.toUpperCase()) + (t.la ? '<span class="la-tag">LA</span>' : "") + "</span>" +
+      (g.state === "in" && g.poss && g.poss === t.id ? '<span class="poss"></span>' : "") +
+      '<span class="rec num">' + PV.esc(t.rec) + "</span>" + right + "</div>";
+  }
+  function card(g) {
+    var a = Number(g.away.score), h = Number(g.home.score);
+    var cls = g.state === "in" ? "live" : g.state === "post" ? "final" : "pre";
+    var st;
+    if (g.state === "in") st = '<span class="pill live">LIVE</span><span>' + PV.esc(g.detail.toUpperCase()) + "</span>" + (g.dd ? '<span class="dd">' + PV.esc(g.dd.toUpperCase()) + "</span>" : "");
+    else if (g.state === "post") st = '<span class="pill final">' + PV.esc(g.detail.toUpperCase()) + "</span>";
+    else st = '<span class="pill next">' + PV.dayPT(g.date) + " " + PV.timePT(g.date) + "</span>";
+    return '<div class="card ' + cls + (g.away.la || g.home.la ? " la-card" : "") + '">' +
+      teamRow(g.away, g, g.state === "post" && a > h) + teamRow(g.home, g, g.state === "post" && h > a) +
+      '<div class="st">' + st + '<span class="net">' + PV.esc(g.net.toUpperCase()) + "</span></div></div>";
+  }
+  function show(games) {
+    var live = 0, up = 0, fin = 0;
+    games.forEach(function (g) { if (g.state === "in") live++; else if (g.state === "pre") up++; else fin++; });
+    if (games.length > PER_PAGE * MAX_PAGES) games = games.slice(0, PER_PAGE * MAX_PAGES);   // oldest finals drop off
+    var pages = Math.max(1, Math.ceil(games.length / PER_PAGE));
+    if (pager) pager.stop();
+    pager = PV.pager(pages, Math.round(CYCLE_MS / pages), function (i) {
+      document.getElementById("cards").innerHTML = games.slice(i * PER_PAGE, (i + 1) * PER_PAGE).map(card).join("");
+      document.getElementById("counts").innerHTML =
+        '<span class="l"><b class="num">' + live + "</b>LIVE</span>" +
+        '<span class="u"><b class="num">' + up + "</b>UPCOMING</span>" +
+        '<span><b class="num">' + fin + "</b>FINAL</span>";
+      document.getElementById("pgtxt").textContent = pages > 1 ? "PAGE " + (i + 1) + " OF " + pages : "";
+    });
+  }
+  function load() {
+    PV.getJSON(ESPN + "?limit=500&groups=80&dates=" + PV.todayKey(), "ncaaf-" + PV.todayKey()).then(function (res) {
+      if (!res) { PV.message("SCOREBOARD LOADING", "RETRYING AUTOMATICALLY"); return; }
+      var games = order(parse(res.data));
+      if (!games.length) { PV.message("NO COLLEGE GAMES TODAY", "SATURDAY IS COMING"); PV.updated(res); return; }
+      show(games);
+      PV.updated(res);
+    });
+  }
+  load();
+  setInterval(load, 3 * 60 * 1000);
+})();
+</script>
+</body>
+</html>

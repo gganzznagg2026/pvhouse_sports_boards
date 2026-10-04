@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PVHSN • Featured Baseball</title>
+<link rel="stylesheet" href="core/pvhsn.css">
+<style>
+  .status{height:56px;display:flex;align-items:center;gap:20px;font-family:"BC";font-weight:700;font-size:26px;letter-spacing:3px;color:var(--dim)}
+  .status .pill{font-size:26px;padding:6px 14px}
+  .status .venue{margin-left:auto;color:var(--faint)}
+  .hero{height:330px;display:grid;grid-template-columns:1fr 360px 1fr;align-items:center;margin-top:8px}
+  .team{display:flex;align-items:center;gap:30px;min-width:0}
+  .team.home{flex-direction:row-reverse;text-align:right}
+  .badge{width:170px;height:170px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:6px}
+  .badge img{width:132px;height:132px}
+  .tcopy{min-width:0}
+  .city{font-family:"BC";font-weight:600;font-size:30px;letter-spacing:5px;color:var(--dim)}
+  .tname{font-family:"BC";font-weight:800;font-size:84px;line-height:.95;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pitch{font-family:"BC";font-weight:600;font-size:24px;letter-spacing:2px;color:var(--faint);margin-top:12px}
+  .score{display:flex;align-items:center;justify-content:center;gap:22px}
+  .score b{font-family:"BC";font-weight:800;font-size:150px;line-height:1;color:var(--amber);min-width:120px;text-align:center}
+  .score b.lose{color:var(--dim)}
+  .score i{width:26px;height:6px;background:var(--line2);display:block}
+  .score .at{font-family:"BC";font-weight:700;font-size:64px;color:var(--faint)}
+  table.ls{width:100%;border-collapse:collapse;margin-top:34px;background:var(--panel);border:1px solid var(--line)}
+  .ls th{height:56px;font-family:"BC";font-weight:700;font-size:24px;letter-spacing:2px;color:var(--faint);border-bottom:1px solid var(--line2)}
+  .ls td{height:108px;text-align:center;font-family:"BC";font-weight:700;font-size:56px;font-variant-numeric:tabular-nums}
+  .ls tr + tr td{border-top:1px solid var(--line)}
+  .ls td.tm{text-align:left;padding-left:28px;width:250px;font-size:46px;letter-spacing:2px}
+  .ls td.tm{white-space:nowrap}
+  .ls .lsl,.ls td.tm .initials{display:inline-flex;vertical-align:middle;margin-right:18px}
+  .ls td.tm span{display:inline-block;width:10px;height:52px;margin-right:20px;vertical-align:-8px}
+  .ls .rhe{background:rgba(255,182,39,.07);color:var(--amber);width:120px}
+  .ls th.rhe{color:var(--amber)}
+  .ls td.gap{color:var(--faint)}
+  .ls .cur{background:rgba(255,255,255,.05)}
+  .facts{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:28px}
+  .fact{background:var(--panel);border:1px solid var(--line);padding:18px 24px}
+  .fact label{display:block;font-family:"BC";font-weight:700;font-size:20px;letter-spacing:3px;color:var(--faint)}
+  .fact div{font-family:"BC";font-weight:700;font-size:36px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style>
+</head>
+<body>
+<div id="stage"><div class="body" id="main"></div></div>
+<script src="core/pvhsn.js"></script>
+<script>
+(function () {
+  var COLORS = { 108:"#ba0021",109:"#a71930",110:"#df4601",111:"#bd3039",112:"#0e3386",113:"#c6011f",114:"#e31937",115:"#33006f",116:"#0c2340",117:"#eb6e1f",118:"#004687",119:"#005a9c",120:"#ab0003",121:"#ff5910",133:"#003831",134:"#fdb827",135:"#ffc425",136:"#005c5c",137:"#fd5a1e",138:"#c41e3a",139:"#8fbce6",140:"#003278",141:"#134a8e",142:"#d31145",143:"#e81828",144:"#ce1141",145:"#c4ced4",146:"#00a3e0",147:"#0c2340",158:"#ffc52f" };
+  var LS_URL = "https://statsapi.mlb.com/api/v1/game/";
+
+  PV.frame({ title: "FEATURED <em>BASEBALL</em>", source: "SOURCE: MLB STATS" });
+
+  function pick(games) {
+    var isLA = function (g) { return PV.isLA("mlb", g.awayTeam.id) || PV.isLA("mlb", g.homeTeam.id); };
+    var by = function (label) { return games.filter(function (g) { return g.status.label === label; }); };
+    var live = by("LIVE"), up = by("UPCOMING"), fin = by("FINAL");
+    fin.sort(function (a, b) { return new Date(b.startTime) - new Date(a.startTime); });
+    var laFirst = function (list) { return list.filter(isLA)[0]; };
+    var recentLA = fin.filter(function (g) { return isLA(g) && Date.now() - new Date(g.startTime) < 7 * 3600 * 1000; })[0];
+    return laFirst(live) || laFirst(up) ||        // 1. Dodgers / Angels playing today, live or still to come
+      live[0] || recentLA ||                       // 2. any live game, else an LA game that just ended
+      up[0] || fin[0] || null;                     // 3. next first pitch, else latest final
+  }
+  function logo(t) {
+    var color = COLORS[t.id] || "#3a4452";
+    return '<div class="badge" style="background:' + color + '33;border:3px solid ' + color + '">' + PV.logo("mlb", t.id, t.abbreviation, color, 132) + "</div>";
+  }
+  function split(name, short) {
+    var parts = String(name).split(" ");
+    var nick = parts.slice(-1)[0];
+    if (/Sox|Jays/.test(nick)) nick = parts.slice(-2).join(" ");
+    return { city: String(short || name).replace(nick, "").trim() || name, nick: nick };
+  }
+  var ALL = [];
+  function others(g) {
+    var rest = ALL.filter(function (x) { return x.gamePk !== g.gamePk; }).slice(0, 2);
+    if (!rest.length) return "ONLY GAME TODAY";
+    return rest.map(function (x) {
+      return x.status.label === "UPCOMING" ? x.awayTeam.abbreviation + " @ " + x.homeTeam.abbreviation + " " + PV.timePT(x.startTime)
+        : x.awayTeam.abbreviation + " " + x.awayStats.runs + "  " + x.homeTeam.abbreviation + " " + x.homeStats.runs + (x.status.label === "FINAL" ? " F" : "");
+    }).join("   \u2022   ");
+  }
+  function render(g, ls) {
+    var a = g.awayTeam, h = g.homeTeam, an = split(a.name), hn = split(h.name);
+    var st = g.status.label, pill;
+    if (st === "LIVE") pill = '<span class="pill live">LIVE</span><span>' + PV.esc(((g.inningState || "") + " " + (g.currentInningOrdinal || "")).toUpperCase()) + "</span>" + (g.outs != null ? "<span>" + g.outs + " OUT" + (g.outs === 1 ? "" : "S") + "</span>" : "");
+    else if (st === "FINAL") pill = '<span class="pill final">FINAL' + (g.currentInning > 9 ? " / " + g.currentInning : "") + "</span>";
+    else pill = '<span class="pill next">FIRST PITCH ' + PV.dayPT(g.startTime) + " " + PV.timePT(g.startTime) + "</span>";
+    var ar = g.awayStats.runs, hr = g.homeStats.runs;
+    var score = st === "UPCOMING" ? '<div class="score"><span class="at">AT</span></div>' :
+      '<div class="score"><b class="' + (st === "FINAL" && ar < hr ? "lose" : "") + '">' + ar + "</b><i></i><b class=\"" + (st === "FINAL" && hr < ar ? "lose" : "") + '">' + hr + "</b></div>";
+    var pp = g.probablePitchers || {};
+    var html = '<div class="status">' + pill + '<span class="venue">' + PV.esc((g.venue && g.venue.name || "").toUpperCase()) + "</span></div>" +
+      '<div class="hero">' +
+      '<div class="team away">' + logo(a) + '<div class="tcopy"><div class="city">' + PV.esc(an.city.toUpperCase()) + '</div><div class="tname">' + PV.esc(an.nick.toUpperCase()) + "</div>" + (PV.isLA("mlb", a.id) ? '<span class="la-tag" style="margin:8px 0 0">LOS ANGELES</span>' : "") +
+      '<div class="pitch">SP ' + PV.esc(pp.away && pp.away.name ? pp.away.name.toUpperCase() : "TBD") + "</div></div></div>" + score +
+      '<div class="team home">' + logo(h) + '<div class="tcopy"><div class="city">' + PV.esc(hn.city.toUpperCase()) + '</div><div class="tname">' + PV.esc(hn.nick.toUpperCase()) + "</div>" + (PV.isLA("mlb", h.id) ? '<span class="la-tag" style="margin:8px 0 0">LOS ANGELES</span>' : "") +
+      '<div class="pitch">SP ' + PV.esc(pp.home && pp.home.name ? pp.home.name.toUpperCase() : "TBD") + "</div></div></div></div>";
+
+    // Inning-by-inning line score with R / H / E
+    var inns = (ls && ls.innings) || [], n = Math.max(9, inns.length), head = "<th></th>", rowA = "", rowH = "";
+    for (var i = 1; i <= n; i++) {
+      var inn = inns[i - 1] || {}, cur = st === "LIVE" && i === g.currentInning ? " cur" : "";
+      head += '<th class="' + cur + '">' + i + "</th>";
+      var av = inn.away && inn.away.runs != null ? inn.away.runs : "", hv = inn.home && inn.home.runs != null ? inn.home.runs : (i <= inns.length && st === "FINAL" ? "X" : "");
+      rowA += '<td class="' + (av === "" ? "gap" : "") + cur + '">' + (av === "" ? "&ndash;" : av) + "</td>";
+      rowH += '<td class="' + (hv === "" ? "gap" : "") + cur + '">' + (hv === "" ? "&ndash;" : hv) + "</td>";
+    }
+    var rhe = function (s) { return '<td class="rhe">' + (s.runs == null ? "&ndash;" : s.runs) + '</td><td class="rhe">' + (s.hits == null ? "&ndash;" : s.hits) + '</td><td class="rhe">' + (s.errors == null ? "&ndash;" : s.errors) + "</td>"; };
+    html += '<table class="ls"><tr>' + head + '<th class="rhe">R</th><th class="rhe">H</th><th class="rhe">E</th></tr>' +
+      '<tr><td class="tm">' + PV.logo("mlb", a.id, a.abbreviation, COLORS[a.id], 50, "lsl") + PV.esc(a.abbreviation) + "</td>" + rowA + rhe(g.awayStats) + "</tr>" +
+      '<tr><td class="tm">' + PV.logo("mlb", h.id, h.abbreviation, COLORS[h.id], 50, "lsl") + PV.esc(h.abbreviation) + "</td>" + rowH + rhe(g.homeStats) + "</tr></table>";
+
+    var f1 = st === "LIVE" && ls && ls.defense && ls.defense.pitcher ? ["PITCHING NOW", ls.defense.pitcher.fullName] : ["FIRST PITCH", PV.timePT(g.startTime)];
+    var f2 = st === "LIVE" && ls && ls.offense && ls.offense.batter ? ["AT BAT", ls.offense.batter.fullName] : ["LEFT ON BASE", ls && ls.teams ? a.abbreviation + " " + ls.teams.away.leftOnBase + "   \u2022   " + h.abbreviation + " " + ls.teams.home.leftOnBase : "\u2013"];
+    html += '<div class="facts"><div class="fact"><label>' + f1[0] + "</label><div>" + PV.esc(String(f1[1]).toUpperCase()) + "</div></div>" +
+      '<div class="fact"><label>' + f2[0] + "</label><div>" + PV.esc(String(f2[1]).toUpperCase()) + "</div></div>" +
+      '<div class="fact"><label>AROUND THE LEAGUE</label><div>' + PV.esc(others(g)) + "</div></div></div>";
+    document.getElementById("main").innerHTML = html;
+  }
+  function load() {
+    PV.getJSON(PV.WORKER + "/mlb", "mlb").then(function (res) {
+      if (!res) { PV.message("BASEBALL LOADING", "RETRYING AUTOMATICALLY"); return; }
+      var games = Array.isArray(res.data) ? res.data : (res.data.games || []);
+      ALL = games;
+      var g = pick(games);
+      if (!g) { PV.message("NO GAMES TODAY", "CHECK BACK TOMORROW"); PV.updated(res); return; }
+      PV.getJSON(LS_URL + g.gamePk + "/linescore", "mlb-ls-" + g.gamePk, 8000).then(function (ls) {
+        render(g, ls ? ls.data : null);
+        PV.updated(res);
+      });
+    });
+  }
+  load();
+  setInterval(load, 60 * 1000);
+})();
+</script>
+</body>
+</html>

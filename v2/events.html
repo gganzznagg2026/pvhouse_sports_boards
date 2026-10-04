@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PVHSN • Events</title>
+<link rel="stylesheet" href="core/pvhsn.css">
+<style>
+  .top{display:grid;grid-template-columns:1fr 1fr;gap:28px;height:470px}
+  .ev{background:var(--panel);border:1px solid var(--line);display:flex;overflow:hidden;position:relative}
+  .ev img{height:100%;object-fit:cover;flex:none}
+  .ev .tx{padding:30px 34px;display:flex;flex-direction:column;min-width:0}
+  .when{font-family:"BC";font-weight:700;font-size:24px;letter-spacing:4px;color:var(--amber)}
+  .ev h2{font-family:"BC";font-weight:800;font-size:62px;line-height:.98;margin-top:10px}
+  .ev .time{font-family:"BC";font-weight:700;font-size:32px;margin-top:16px}
+  .ev p{font-size:23px;line-height:1.4;color:var(--dim);margin-top:16px}
+  .ev .tag{position:absolute;right:20px;top:20px}
+  .sp{flex-direction:column}
+  .sp img{width:100%;height:230px}
+  .sp .tx{padding:22px 34px}
+  .sp h2{font-size:52px}
+  .bot{display:grid;grid-template-columns:520px 1fr;gap:28px;margin-top:28px;height:350px}
+  .hh{background:linear-gradient(135deg,rgba(255,182,39,.16),var(--panel) 60%);border:1px solid rgba(255,182,39,.4);padding:30px 34px;position:relative}
+  .hh h2{font-family:"BC";font-weight:800;font-size:66px;line-height:1;margin-top:8px}
+  .hh .time{font-family:"BC";font-weight:700;font-size:38px;margin-top:10px}
+  .hh .menu{font-family:"BC";font-weight:600;font-size:24px;color:var(--dim);letter-spacing:1px;margin-top:16px;line-height:1.45}
+  .hh .menu b{color:var(--amber)}
+  .hh .pill{position:absolute;right:24px;top:26px;font-size:24px}
+  .dr{background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column}
+  .dr h3{height:58px;display:flex;align-items:center;padding:0 28px;font-family:"BC";font-weight:800;font-size:26px;letter-spacing:4px;color:var(--amber);border-bottom:1px solid var(--line2)}
+  .days{flex:1;display:grid;grid-template-columns:repeat(5,1fr)}
+  .d{padding:22px 22px;border-left:1px solid var(--line);display:flex;flex-direction:column}
+  .d:first-child{border-left:0}
+  .d .dn{font-family:"BC";font-weight:700;font-size:22px;letter-spacing:4px;color:var(--faint)}
+  .d .what{font-family:"BC";font-weight:800;font-size:36px;line-height:1.05;margin-top:14px}
+  .d .det{font-family:"BC";font-weight:600;font-size:21px;color:var(--dim);letter-spacing:1px;margin-top:auto}
+  .d.today{background:linear-gradient(180deg,rgba(255,182,39,.18),rgba(255,182,39,.03));box-shadow:inset 0 4px 0 var(--amber)}
+  .d.today .dn{color:var(--amber)}
+</style>
+</head>
+<body>
+<div id="stage"><div class="body">
+  <div class="top">
+    <div class="ev"><img src="img/jeopardy.jpg" alt=""><div class="tx">
+      <div class="when">EVERY TUESDAY</div><h2>JEOPARDY BAR LEAGUE</h2>
+      <div class="time num">7:30 PM &bull; SEASON STARTS OCTOBER 4</div>
+      <p>The official bar trivia experience from America's Favorite Quiz Show. A 10-week league with 200+ prizes worth over $18,000, weekly random draws, virtual auditions, and a VIP Jeopardy! trip for the national winning team.</p>
+      <span class="pill next tag" id="jtag" style="display:none">TONIGHT</span>
+    </div></div>
+    <div class="ev sp"><img src="img/southpark.jpg" alt=""><div class="tx">
+      <div class="when">EVERY OTHER WEDNESDAY</div><h2>SOUTH PARK PREMIERE SCREENING</h2>
+      <div class="time num">8:30 PM &bull; SEE IT BEFORE IT AIRS</div>
+    </div></div>
+  </div>
+  <div class="bot">
+    <div class="hh"><div class="when">MONDAY &ndash; FRIDAY</div><h2>HAPPY HOUR</h2><div class="time num">3:00 &ndash; 6:00 PM</div>
+      <div class="menu"><b>BITES $12.95</b> &bull; NACHOS &bull; WINGS &bull; SLIDERS &bull; PEPPERONI PIZZA &bull; BUFFALO CAULIFLOWER &bull; CHINESE CHICKEN SALAD &bull; VEGGIE RICE BOWL</div>
+      <span class="pill live" id="hhnow" style="display:none">ON NOW</span></div>
+    <div class="dr"><h3>WEEKLY DRINK SPECIALS</h3><div class="days" id="days"></div></div>
+  </div>
+</div></div>
+<script src="core/pvhsn.js"></script>
+<script>
+(function () {
+  var SPECIALS = [
+    ["MONDAY", "ALL DRAFTS 20% OFF", "ALL DAY"],
+    ["TUESDAY", "TITO'S VODKA DRINKS", "$10.95 ALL DAY"],
+    ["WEDNESDAY", "ALL WINES 20% OFF", "ALL DAY"],
+    ["THURSDAY", "ALL WELL DRINKS", "$9.95 ALL DAY"],
+    ["FRIDAY", "ESPRESSO MARTINIS", "$11.95 ALL DAY"]
+  ];
+  PV.frame({ title: "EVENTS &amp; <em>SPECIALS</em>", source: "PVHOUSELA.COM • @P.V.HOUSE" });
+  function tick() {
+    var now = new Date();
+    var day = PV.fmt(now, { weekday: "long" }).toUpperCase();
+    var hour = Number(PV.fmt(now, { hour: "numeric", hour12: false })) % 24;
+    document.getElementById("days").innerHTML = SPECIALS.map(function (s) {
+      return '<div class="d' + (s[0] === day ? " today" : "") + '"><div class="dn">' + (s[0] === day ? "TODAY • " : "") + s[0] +
+        '</div><div class="what">' + s[1] + '</div><div class="det">' + s[2] + "</div></div>";
+    }).join("");
+    var weekday = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"].indexOf(day) >= 0;
+    document.getElementById("hhnow").style.display = weekday && hour >= 15 && hour < 18 ? "" : "none";
+    document.getElementById("jtag").style.display = day === "TUESDAY" && hour < 22 ? "" : "none";
+    var u = document.getElementById("updated");
+    if (u) u.textContent = "";
+  }
+  tick();
+  setInterval(tick, 60 * 1000);
+})();
+</script>
+</body>
+</html>

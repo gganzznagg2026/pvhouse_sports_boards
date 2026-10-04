@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PVHSN • NFL Standings</title>
+<link rel="stylesheet" href="core/pvhsn.css">
+<style>
+  .grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:28px;height:100%}
+  .div{background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column}
+  .div h2{height:58px;display:flex;align-items:center;padding:0 24px;font-family:"BC";font-weight:800;font-size:30px;letter-spacing:4px;
+    border-bottom:2px solid var(--accent);background:linear-gradient(90deg,rgba(255,255,255,.04),transparent)}
+  .div h2 span{color:var(--accent);margin-right:12px}
+  .row{display:grid;grid-template-columns:54px 64px 1fr 70px 70px 104px 110px 96px;align-items:center;padding:0 24px;column-gap:8px}
+  .row.head{height:40px;font-family:"BC";font-weight:700;font-size:18px;letter-spacing:2px;color:var(--faint)}
+  .row.team{flex:1;border-top:1px solid var(--line)}
+  .row .c{text-align:center}
+  .seed{width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-family:"BC";font-weight:800;font-size:22px;color:var(--faint);border:1px solid var(--line2)}
+  .seed.lead{background:var(--amber);border-color:var(--amber);color:#111}
+  .seed.wc{border:2px solid var(--amber);color:var(--amber)}
+  .row img{width:52px;height:52px}
+  .nm{font-family:"BC";font-weight:700;font-size:38px;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nm small{font-family:"BC";font-weight:600;font-size:20px;letter-spacing:2px;color:var(--faint);margin-left:10px}
+  .v{font-family:"BC";font-weight:700;font-size:38px;text-align:center}
+  .v.pct{color:var(--amber)}
+  .v.sm{font-size:30px;font-weight:600}
+  .pos{color:var(--green)} .neg{color:var(--red)}
+  .legend{position:absolute;right:64px;top:118px;font-family:"BC";font-weight:600;font-size:18px;letter-spacing:2px;color:var(--faint);display:flex;gap:26px;align-items:center}
+  .legend i{display:inline-block;width:14px;height:14px;margin-right:8px;vertical-align:-1px}
+</style>
+</head>
+<body>
+<div id="stage"><div class="body"><div class="grid" id="grid"></div></div></div>
+<script src="core/pvhsn.js"></script>
+<script>
+(function () {
+  var CONF = (PV.qs("conf") || "AFC").toUpperCase() === "NFC" ? "NFC" : "AFC";
+  var DIVS = {
+    AFC: { EAST: ["BUF", "MIA", "NE", "NYJ"], NORTH: ["BAL", "CIN", "CLE", "PIT"], SOUTH: ["HOU", "IND", "JAX", "TEN"], WEST: ["DEN", "KC", "LV", "LAC"] },
+    NFC: { EAST: ["DAL", "NYG", "PHI", "WSH"], NORTH: ["CHI", "DET", "GB", "MIN"], SOUTH: ["ATL", "CAR", "NO", "TB"], WEST: ["ARI", "LAR", "SF", "SEA"] }
+  };
+  var LOGO_FILE = { WSH: "was" };
+  document.documentElement.style.setProperty("--accent", CONF === "AFC" ? "#ff4b55" : "#4c9aff");
+
+  PV.frame({ title: "NFL STANDINGS &bull; <em>" + CONF + "</em>", source: "SOURCE: ESPN" });
+  var lg = document.createElement("div");
+  lg.className = "legend";
+  lg.innerHTML = '<span><i style="background:var(--amber)"></i>DIVISION LEADER</span><span><i style="border:2px solid var(--amber)"></i>WILD CARD</span>';
+  document.getElementById("stage").appendChild(lg);
+
+  function stat(e, name) {
+    for (var i = 0; i < e.stats.length; i++) if (e.stats[i].name === name) return e.stats[i];
+    return {};
+  }
+  function parse(data) {
+    var out = {};
+    (data.children || []).forEach(function (conf) {
+      ((conf.standings || {}).entries || []).forEach(function (e) {
+        var ab = e.team.abbreviation === "WAS" ? "WSH" : e.team.abbreviation;
+        out[ab] = {
+          ab: ab, name: e.team.shortDisplayName || e.team.name,
+          w: stat(e, "wins").displayValue, l: stat(e, "losses").displayValue, t: Number(stat(e, "ties").value || 0),
+          pct: stat(e, "winPercent").displayValue, diff: stat(e, "differential").displayValue || stat(e, "pointDifferential").displayValue,
+          strk: stat(e, "streak").displayValue, seed: Number(stat(e, "playoffSeed").value || 99)
+        };
+      });
+    });
+    return out;
+  }
+  function render(teams) {
+    var html = "";
+    Object.keys(DIVS[CONF]).forEach(function (div) {
+      var rows = DIVS[CONF][div].map(function (ab) { return teams[ab] || { ab: ab, name: ab, seed: 99 }; })
+        .sort(function (a, b) { return a.seed - b.seed; });
+      html += '<section class="div"><h2><span>' + CONF + "</span>" + div + "</h2>" +
+        '<div class="row head"><div></div><div></div><div>TEAM</div><div class="c">W</div><div class="c">L</div><div class="c">PCT</div><div class="c">DIFF</div><div class="c">STRK</div></div>';
+      rows.forEach(function (t) {
+        var seedCls = t.seed <= 4 ? "lead" : t.seed <= 7 ? "wc" : "";
+        var diff = String(t.diff || "—");
+        var strk = String(t.strk || "—");
+        var la = PV.isLA("nfl", t.ab);
+        html += '<div class="row team' + (la ? " la-row" : "") + '">' +
+          '<div class="seed ' + seedCls + '">' + (t.seed < 99 ? t.seed : "") + "</div>" +
+          PV.logo("nfl", t.ab, t.ab, "#3a4452", 52) +
+          '<div class="nm">' + PV.esc(String(t.name).toUpperCase()) + (la ? '<span class="la-tag">LA</span>' : "") + (t.t ? "<small>" + t.t + " T</small>" : "") + "</div>" +
+          '<div class="v num">' + PV.esc(t.w == null ? "—" : t.w) + "</div>" +
+          '<div class="v num">' + PV.esc(t.l == null ? "—" : t.l) + "</div>" +
+          '<div class="v num pct">' + PV.esc(t.pct || "—") + "</div>" +
+          '<div class="v num sm ' + (diff.charAt(0) === "+" ? "pos" : diff.charAt(0) === "-" ? "neg" : "") + '">' + PV.esc(diff) + "</div>" +
+          '<div class="v num sm ' + (strk.charAt(0) === "W" ? "pos" : strk.charAt(0) === "L" ? "neg" : "") + '">' + PV.esc(strk) + "</div>" +
+          "</div>";
+      });
+      html += "</section>";
+    });
+    document.getElementById("grid").innerHTML = html;
+  }
+  function load() {
+    PV.getJSON(PV.WORKER + "/nfl-standings", "nfl-standings").then(function (res) {
+      if (!res) { PV.message("STANDINGS LOADING", "RETRYING AUTOMATICALLY"); return; }
+      render(parse(res.data));
+      PV.updated(res);
+    });
+  }
+  load();
+  setInterval(load, 10 * 60 * 1000);
+})();
+</script>
+</body>
+</html>

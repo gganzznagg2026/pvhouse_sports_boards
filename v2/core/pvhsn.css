@@ -1,0 +1,70 @@
+/* PVHSN shared board styles - one 1920x1080 canvas, scaled to the screen. */
+@font-face{font-family:"BC";src:url(fonts/barlow-condensed-latin-500-normal.woff2) format("woff2");font-weight:500}
+@font-face{font-family:"BC";src:url(fonts/barlow-condensed-latin-600-normal.woff2) format("woff2");font-weight:600}
+@font-face{font-family:"BC";src:url(fonts/barlow-condensed-latin-700-normal.woff2) format("woff2");font-weight:700}
+@font-face{font-family:"BC";src:url(fonts/barlow-condensed-latin-800-normal.woff2) format("woff2");font-weight:800}
+@font-face{font-family:"B";src:url(fonts/barlow-latin-400-normal.woff2) format("woff2");font-weight:400}
+@font-face{font-family:"B";src:url(fonts/barlow-latin-500-normal.woff2) format("woff2");font-weight:500}
+@font-face{font-family:"B";src:url(fonts/barlow-latin-600-normal.woff2) format("woff2");font-weight:600}
+
+:root{
+  --bg:#06080b; --panel:#0d1117; --panel2:#121820; --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+  --ink:#f2efe8; --dim:#8b939c; --faint:#59616b;
+  --amber:#ffb627; --amber-dim:#7a5a1c; --green:#2fd27a; --red:#ff5a4f; --blue:#4c9aff;
+  --accent:var(--amber);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#000}
+body{font-family:"B",Arial,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;overflow:hidden;
+  background:radial-gradient(ellipse 1400px 700px at 50% -10%,#18202b 0,var(--bg) 70%)}
+.num{font-family:"BC",Arial Narrow,sans-serif;font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.cond{font-family:"BC",Arial Narrow,sans-serif}
+
+/* Header */
+.hd{position:absolute;left:0;right:0;top:0;height:112px;display:flex;align-items:center;padding:0 64px;
+  border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(0,0,0,0))}
+.mark{display:flex;align-items:center;gap:18px}
+.mark-badge{width:62px;height:62px;border:2px solid var(--amber);display:flex;align-items:center;justify-content:center;
+  font-family:"BC";font-weight:800;font-size:19px;line-height:.9;letter-spacing:1px;color:var(--amber);text-align:center}
+.mark-name{font-family:"BC";font-weight:700;font-size:22px;letter-spacing:5px;color:var(--dim)}
+.board-title{font-family:"BC";font-weight:800;font-size:56px;letter-spacing:2px;line-height:1;margin-top:2px}
+.board-title em{font-style:normal;color:var(--accent)}
+.hd-right{margin-left:auto;text-align:right}
+.clock{font-family:"BC";font-weight:700;font-size:44px;letter-spacing:1px;line-height:1}
+.date{font-family:"BC";font-weight:600;font-size:20px;letter-spacing:3px;color:var(--dim);margin-top:6px}
+
+/* Footer */
+.ft{position:absolute;left:0;right:0;bottom:0;height:64px;display:flex;align-items:center;padding:0 64px;
+  border-top:1px solid var(--line);font-family:"BC";font-weight:600;font-size:20px;letter-spacing:3px;color:var(--faint)}
+.ft .src{flex:1}
+.ft .pvlogo{height:40px;filter:invert(1);opacity:.85}
+.ft .upd{flex:1;text-align:right}
+.ft .upd.stale{color:var(--amber)}
+.pager{display:flex;gap:10px;align-items:center;margin:0 32px}
+.pager i{display:block;width:44px;height:6px;background:var(--line2);position:relative;overflow:hidden}
+.pager i.on:after{content:"";position:absolute;left:0;top:0;bottom:0;width:100%;background:var(--accent);
+  transform-origin:0 0;animation:fill var(--page-ms,10000ms) linear forwards}
+.pager i.done{background:var(--amber-dim)}
+@keyframes fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+/* Body area between header and footer */
+.body{position:absolute;left:64px;right:64px;top:140px;bottom:92px}
+
+/* Shared pieces */
+.pill{display:inline-flex;align-items:center;gap:8px;font-family:"BC";font-weight:700;letter-spacing:2px;font-size:20px;padding:3px 10px;border-radius:3px}
+.pill.live{background:rgba(255,90,79,.14);color:var(--red)}
+.pill.live:before{content:"";width:9px;height:9px;border-radius:50%;background:var(--red)}
+.pill.final{color:var(--dim);background:rgba(255,255,255,.05)}
+.pill.next{color:var(--blue);background:rgba(76,154,255,.12)}
+.chip{display:inline-block;width:6px;align-self:stretch;border-radius:1px}
+.logo{object-fit:contain}
+.initials{display:flex;align-items:center;justify-content:center;font-family:"BC";font-weight:800;color:#fff;letter-spacing:1px}
+.msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center}
+.msg b{font-family:"BC";font-weight:800;font-size:64px;letter-spacing:2px}
+.msg span{font-family:"BC";font-weight:600;font-size:28px;letter-spacing:3px;color:var(--dim)}
+
+/* Los Angeles spotlight */
+.la-tag{display:inline-block;font-family:"BC";font-weight:800;font-size:18px;letter-spacing:2px;color:#111;background:var(--amber);padding:2px 7px;border-radius:2px;margin-left:12px;vertical-align:middle}
+.la-row{background:linear-gradient(90deg,rgba(255,182,39,.16),rgba(255,182,39,.02) 60%) !important;box-shadow:inset 4px 0 0 var(--amber)}
+.la-card{border-color:rgba(255,182,39,.55) !important;box-shadow:0 0 0 1px rgba(255,182,39,.35),0 0 26px rgba(255,182,39,.12)}

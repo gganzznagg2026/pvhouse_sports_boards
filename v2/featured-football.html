@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PVHSN • Featured Football</title>
+<link rel="stylesheet" href="core/pvhsn.css">
+<style>
+  .banner{height:92px;display:flex;align-items:center;gap:22px}
+  .banner h1{font-family:"BC";font-weight:800;font-size:70px;letter-spacing:3px;line-height:1;color:var(--amber)}
+  .banner .sub{margin-left:auto;text-align:right;font-family:"BC";font-weight:600;font-size:24px;letter-spacing:3px;color:var(--dim);line-height:1.35}
+  .hero{height:300px;display:grid;grid-template-columns:1fr 420px 1fr;align-items:center;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    background:linear-gradient(90deg,var(--ac) 0,transparent 30%,transparent 70%,var(--hc) 100%)}
+  .tm{display:flex;align-items:center;gap:28px;padding:0 40px;min-width:0}
+  .tm.home{flex-direction:row-reverse;text-align:right}
+  .tm img{width:190px;height:190px;flex:none;filter:drop-shadow(0 8px 18px rgba(0,0,0,.5))}
+  .tm .city{font-family:"BC";font-weight:600;font-size:30px;letter-spacing:5px;color:var(--dim)}
+  .tm .nick{font-family:"BC";font-weight:800;font-size:92px;line-height:.95;white-space:nowrap}
+  .tm .rec{font-family:"BC";font-weight:700;font-size:28px;letter-spacing:2px;color:var(--amber);margin-top:6px}
+  .mid{text-align:center}
+  .mid .big{font-family:"BC";font-weight:800;font-size:92px;line-height:1}
+  .mid .big i{font-style:normal;color:var(--faint);margin:0 18px}
+  .mid .when{font-family:"BC";font-weight:700;font-size:40px;letter-spacing:1px}
+  .mid .net{font-family:"BC";font-weight:600;font-size:24px;letter-spacing:3px;color:var(--dim);margin-top:8px}
+  .mid .pill{font-size:24px;margin-top:12px}
+  .low{display:grid;grid-template-columns:600px 1fr;gap:28px;margin-top:28px;height:380px}
+  .box{background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column}
+  .box h3{height:54px;display:flex;align-items:center;padding:0 24px;font-family:"BC";font-weight:800;font-size:24px;letter-spacing:4px;color:var(--amber);border-bottom:1px solid var(--line2)}
+  .box h3 span{margin-left:auto;color:var(--faint);font-size:18px;letter-spacing:2px;font-weight:600}
+  .ln{flex:1;display:grid;grid-template-columns:150px 1fr 1fr;align-items:center;padding:0 24px;border-top:1px solid var(--line)}
+  .ln:first-of-type{border-top:0}
+  .ln.head{flex:none;height:44px;font-family:"BC";font-weight:700;font-size:18px;letter-spacing:3px;color:var(--faint)}
+  .ln .k{font-family:"BC";font-weight:700;font-size:22px;letter-spacing:3px;color:var(--dim)}
+  .ln .v{font-family:"BC";font-weight:800;font-size:44px;text-align:center}
+  .ln .v small{display:block;font-size:18px;font-weight:600;color:var(--faint);letter-spacing:2px}
+  .ln .v.fav{color:var(--amber)}
+  .ld{flex:1;display:grid;grid-template-columns:1fr 150px 1fr;align-items:center;padding:0 24px;border-top:1px solid var(--line)}
+  .ld:first-of-type{border-top:0}
+  .ld .p{font-family:"BC";min-width:0}
+  .ld .p b{display:block;font-weight:800;font-size:34px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ld .p span{display:block;font-weight:600;font-size:22px;color:var(--dim);letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ld .p.r{text-align:right}
+  .ld .cat{text-align:center;font-family:"BC";font-weight:700;font-size:20px;letter-spacing:3px;color:var(--faint)}
+</style>
+</head>
+<body>
+<div id="stage"><div class="body" id="main"></div></div>
+<script src="core/pvhsn.js"></script>
+<script>
+(function () {
+  var ESPN = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard";
+  var LOGO_FILE = { WSH: "was" };
+  PV.frame({ title: "FEATURED <em>FOOTBALL</em>", source: "SOURCE: ESPN / DRAFTKINGS" });
+
+  function get(o, path) { return path.split(".").reduce(function (a, k) { return a && a[k] != null ? a[k] : null; }, o); }
+  function etParts(iso) {
+    var p = {};
+    new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "long", hour: "numeric", hour12: false })
+      .formatToParts(new Date(iso)).forEach(function (x) { p[x.type] = x.value; });
+    return { day: p.weekday, hour: Number(p.hour) % 24 };
+  }
+  function ptDay(iso) { return PV.fmt(new Date(iso), { year: "numeric", month: "2-digit", day: "2-digit" }); }
+  function side(c) {
+    var t = c.team || {}, rec = "", lead = {};
+    (c.records || []).forEach(function (r) { if (r.type === "total") rec = r.summary; });
+    (c.leaders || []).forEach(function (l) {
+      var x = (l.leaders || [])[0];
+      if (x) lead[l.name] = { who: get(x, "athlete.shortName") || get(x, "athlete.displayName") || "", stat: x.displayValue || "" };
+    });
+    var ab = t.abbreviation === "WAS" ? "WSH" : t.abbreviation;
+    return { ab: ab, city: t.location || "", nick: t.shortDisplayName || t.name || ab, color: PV.hex(t.color), rec: rec, score: c.score, lead: lead, la: PV.isLA("nfl", ab) };
+  }
+  function parse(data) {
+    return (data.events || []).map(function (e) {
+      var c = e.competitions[0], st = c.status || {}, ty = st.type || {}, a = null, h = null, nets = [];
+      c.competitors.forEach(function (x) { if (x.homeAway === "away") a = x; else h = x; });
+      (c.broadcasts || []).forEach(function (b) { nets = nets.concat(b.names || []); });
+      var o = (c.odds || [])[0] || {}, et = etParts(e.date);
+      return {
+        date: e.date, state: ty.state, detail: ty.shortDetail || "", net: nets.join(" / "),
+        venue: [get(c, "venue.fullName"), get(c, "venue.address.city")].filter(Boolean).join(" • "),
+        note: ((c.notes || [])[0] || {}).headline || "", et: et, prime: et.hour >= 19,
+        away: side(a), home: side(h), odds: o
+      };
+    });
+  }
+  // Who gets the spotlight: LA game today > live prime-time > next prime-time > next game > latest final
+  function pick(games) {
+    var today = ptDay(new Date().toISOString()), now = Date.now();
+    var recent = function (g) { return g.state !== "post" || now - new Date(g.date) < 4.5 * 3600 * 1000; };
+    var la = games.filter(function (g) { return (g.away.la || g.home.la) && ptDay(g.date) === today && recent(g); })
+      .sort(function (x, y) { return (x.state === "in" ? -1 : 0) - (y.state === "in" ? -1 : 0) || (x.state === "post") - (y.state === "post") || new Date(x.date) - new Date(y.date); });
+    if (la.length) return la[0];
+    var live = games.filter(function (g) { return g.state === "in"; });
+    var livePrime = live.filter(function (g) { return g.prime; })[0];
+    if (livePrime) return livePrime;
+    var up = games.filter(function (g) { return g.state === "pre"; }).sort(function (x, y) { return new Date(x.date) - new Date(y.date); });
+    var justEnded = games.filter(function (g) { return g.state === "post" && g.prime && recent(g); })[0];
+    return justEnded || up.filter(function (g) { return g.prime; })[0] || live[0] || up[0] ||
+      games.slice().sort(function (x, y) { return new Date(y.date) - new Date(x.date); })[0] || null;
+  }
+  function label(g) {
+    if (g.prime) {
+      var n = { Thursday: "THURSDAY", Sunday: "SUNDAY", Monday: "MONDAY", Saturday: "SATURDAY", Friday: "FRIDAY" }[g.et.day];
+      if (n) return n + " NIGHT FOOTBALL";
+    }
+    if (g.away.la || g.home.la) return "LOS ANGELES GAME DAY";
+    if (/london|international|germany|mexico|brazil|ireland|spain/i.test(g.note)) return "INTERNATIONAL SERIES";
+    return "FEATURED MATCHUP";
+  }
+  function logo(t) {
+    return PV.logo("nfl", t.ab, t.ab, t.color, 190);
+  }
+  function teamBlock(t, cls) {
+    return '<div class="tm ' + cls + '">' + logo(t) + '<div><div class="city">' + PV.esc(t.city.toUpperCase()) + "</div>" +
+      '<div class="nick">' + PV.esc(t.nick.toUpperCase()) + "</div>" +
+      '<div class="rec">' + PV.esc(t.rec) + (t.la ? '<span class="la-tag">LA</span>' : "") + "</div></div></div>";
+  }
+  function render(g) {
+    var o = g.odds, mid;
+    if (g.state === "pre") mid = '<div class="when">' + PV.fmt(new Date(g.date), { weekday: "short" }).toUpperCase() + " • " + PV.timePT(g.date) + '</div><div class="net">' + PV.esc(g.net.toUpperCase()) + "</div>";
+    else mid = '<div class="big num">' + PV.esc(g.away.score) + "<i>&ndash;</i>" + PV.esc(g.home.score) + "</div>" +
+      '<span class="pill ' + (g.state === "in" ? "live" : "final") + '">' + (g.state === "in" ? "LIVE " : "") + PV.esc(g.detail.toUpperCase()) + "</span>";
+    var spA = get(o, "pointSpread.away.close.line"), spH = get(o, "pointSpread.home.close.line");
+    var favA = spA && spA.charAt(0) === "-", favH = spH && spH.charAt(0) === "-";
+    var cell = function (cur, open, fav) {
+      if (cur == null) return '<div class="v" style="color:var(--faint)">&ndash;</div>';
+      return '<div class="v num' + (fav ? " fav" : "") + '">' + PV.esc(cur) + (open != null && open !== cur ? "<small>OPEN " + PV.esc(open) + "</small>" : "<small>&nbsp;</small>") + "</div>";
+    };
+    var tot = get(o, "total.over.close.line") || (o.overUnder ? "o" + o.overUnder : null), totO = get(o, "total.over.open.line");
+    var lines = '<div class="box"><h3>THE LINE<span>' + PV.esc(String(get(o, "provider.name") || "").toUpperCase()) + "</span></h3>" +
+      '<div class="ln head"><div></div><div style="text-align:center">' + PV.esc(g.away.ab) + '</div><div style="text-align:center">' + PV.esc(g.home.ab) + "</div></div>" +
+      '<div class="ln"><div class="k">SPREAD</div>' + cell(spA, get(o, "pointSpread.away.open.line"), favA) + cell(spH, get(o, "pointSpread.home.open.line"), favH) + "</div>" +
+      '<div class="ln"><div class="k">MONEYLINE</div>' + cell(get(o, "moneyline.away.close.odds"), get(o, "moneyline.away.open.odds"), favA) + cell(get(o, "moneyline.home.close.odds"), get(o, "moneyline.home.open.odds"), favH) + "</div>" +
+      '<div class="ln"><div class="k">TOTAL</div><div class="v num" style="grid-column:span 2">' + (tot ? PV.esc(String(tot).replace(/^o/, "O/U ")) + (totO && totO !== tot ? "<small>OPEN " + PV.esc(String(totO).replace(/^o/, "")) + "</small>" : "<small>&nbsp;</small>") : "&ndash;") + "</div></div></div>";
+    var cats = [["passingLeader", "PASSING"], ["rushingLeader", "RUSHING"], ["receivingLeader", "RECEIVING"]];
+    var leaders = '<div class="box"><h3>' + (g.state === "pre" ? "SEASON LEADERS" : "GAME LEADERS") + "<span>" + PV.esc(g.away.ab) + " vs " + PV.esc(g.home.ab) + "</span></h3>" +
+      cats.map(function (c) {
+        var a = g.away.lead[c[0]] || {}, h = g.home.lead[c[0]] || {};
+        return '<div class="ld"><div class="p"><b>' + PV.esc((a.who || "–").toUpperCase()) + "</b><span>" + PV.esc((a.stat || "").toUpperCase()) + "</span></div>" +
+          '<div class="cat">' + c[1] + '</div><div class="p r"><b>' + PV.esc((h.who || "–").toUpperCase()) + "</b><span>" + PV.esc((h.stat || "").toUpperCase()) + "</span></div></div>";
+      }).join("") + "</div>";
+    document.getElementById("main").innerHTML =
+      '<div class="banner"><h1>' + label(g) + '</h1><div class="sub">' + PV.esc(g.venue.toUpperCase()) + "</div></div>" +
+      '<div class="hero" style="--ac:' + g.away.color + "66;--hc:" + g.home.color + '66">' + teamBlock(g.away, "away") + '<div class="mid">' + mid + "</div>" + teamBlock(g.home, "home") + "</div>" +
+      '<div class="low">' + lines + leaders + "</div>";
+  }
+  function load() {
+    PV.getJSON(ESPN, "nfl-scoreboard").then(function (res) {
+      if (!res) { PV.message("FOOTBALL LOADING", "RETRYING AUTOMATICALLY"); return; }
+      var g = pick(parse(res.data));
+      if (!g) { PV.message("NO NFL GAMES THIS WEEK", "SEE YOU NEXT WEEK"); return; }
+      render(g);
+      PV.updated(res);
+    });
+  }
+  load();
+  setInterval(load, 60 * 1000);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PVHSN • NFL Lines</title>
+<link rel="stylesheet" href="core/pvhsn.css">
+<style>
+  .sum{height:40px;display:flex;align-items:center;gap:30px;font-family:"BC";font-weight:700;font-size:21px;letter-spacing:3px;color:var(--faint)}
+  .sum .pg{margin-left:auto}
+  .sum .pager{margin:0 0 0 24px}
+  .tbl{position:absolute;left:0;right:0;top:52px;bottom:0;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line)}
+  .hrow,.g{display:grid;grid-template-columns:230px 1fr 230px 200px 210px;align-items:center}
+  .hrow{height:46px;font-family:"BC";font-weight:700;font-size:19px;letter-spacing:3px;color:var(--faint);border-bottom:1px solid var(--line2)}
+  .hrow div{padding:0 22px} .hrow .c{text-align:center}
+  .g{flex:1;border-top:1px solid var(--line);min-height:0}
+  .g:first-of-type{border-top:0}
+  .when{padding:0 22px;font-family:"BC"}
+  .when b{display:block;font-weight:700;font-size:30px;letter-spacing:1px}
+  .when span{display:block;font-weight:600;font-size:19px;letter-spacing:2px;color:var(--faint);margin-top:2px}
+  .when .pill{font-size:19px;margin-top:4px}
+  .teams,.col{display:flex;flex-direction:column;height:100%}
+  .t{flex:1;display:flex;align-items:center;gap:14px;padding:0 22px;min-width:0}
+  .t img{width:46px;height:46px;flex:none}
+  .t .n{font-family:"BC";font-weight:700;font-size:37px;letter-spacing:.5px;white-space:nowrap}
+  .t .r{font-family:"BC";font-weight:600;font-size:20px;color:var(--faint);letter-spacing:1px}
+  .t .s{margin-left:auto;font-family:"BC";font-weight:800;font-size:36px;color:var(--amber)}
+  .t.lose .n,.t.lose .s{color:var(--faint)}
+  .col .v{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;font-family:"BC";font-weight:700;font-size:32px}
+  .v.fav{color:var(--amber)}
+  .v small{font-size:18px;font-weight:600;color:var(--faint);letter-spacing:1px}
+  .mv{font-size:18px} .mv.up{color:var(--green)} .mv.dn{color:var(--red)}
+  .tot{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;font-family:"BC"}
+  .tot b{font-weight:700;font-size:38px}
+  .tot small{font-weight:600;font-size:18px;color:var(--faint);letter-spacing:1px;margin-top:2px}
+  .dim{color:var(--faint)}
+</style>
+</head>
+<body>
+<div id="stage"><div class="body">
+  <div class="sum"><span id="info">LINES: DRAFTKINGS VIA ESPN &bull; SMALL NUMBERS = OPENING LINE</span><span class="pg" id="pgtxt"></span></div>
+  <div class="tbl"><div class="hrow"><div>KICKOFF</div><div>MATCHUP</div><div class="c">SPREAD</div><div class="c">TOTAL</div><div class="c">MONEYLINE</div></div><div id="rows" style="flex:1;display:flex;flex-direction:column"></div></div>
+</div></div>
+<script src="core/pvhsn.js"></script>
+<script>
+(function () {
+  var PER_PAGE = 8, CYCLE_MS = (Number(PV.qs("cycle")) || 36) * 1000, pager = null;
+  var ESPN = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard";
+  var LOGO_FILE = { WSH: "was" };
+  PV.frame({ title: "NFL &bull; <em>LINES</em>", source: "SOURCE: ESPN / DRAFTKINGS" });
+  document.querySelector(".sum").appendChild(document.getElementById("pager"));
+
+  function get(o, path) { return path.split(".").reduce(function (a, k) { return a && a[k] != null ? a[k] : null; }, o); }
+  function side(c) {
+    var t = c.team || {}, rec = "";
+    (c.records || []).forEach(function (r) { if (r.type === "total") rec = r.summary; });
+    var ab = t.abbreviation === "WAS" ? "WSH" : t.abbreviation;
+    return { ab: ab, name: t.shortDisplayName || t.name, rec: rec, score: c.score, la: PV.isLA("nfl", ab) };
+  }
+  function parse(data) {
+    return (data.events || []).map(function (e) {
+      var c = e.competitions[0], ty = (c.status || {}).type || {}, a = null, h = null;
+      c.competitors.forEach(function (x) { if (x.homeAway === "away") a = x; else h = x; });
+      var o = (c.odds || [])[0] || {}, nets = [];
+      (c.broadcasts || []).forEach(function (b) { nets = nets.concat(b.names || []); });
+      return {
+        date: e.date, state: ty.state, detail: ty.shortDetail || "", net: nets.join(" / "),
+        away: side(a), home: side(h),
+        spread: { a: get(o, "pointSpread.away.close.line"), ao: get(o, "pointSpread.away.open.line"), h: get(o, "pointSpread.home.close.line"), ho: get(o, "pointSpread.home.open.line") },
+        ml: { a: get(o, "moneyline.away.close.odds"), ao: get(o, "moneyline.away.open.odds"), h: get(o, "moneyline.home.close.odds"), ho: get(o, "moneyline.home.open.odds") },
+        total: { c: get(o, "total.over.close.line") || (o.overUnder ? "o" + o.overUnder : null), o: get(o, "total.over.open.line") }
+      };
+    });
+  }
+  function order(games) {
+    var r = { "in": 0, pre: 1, post: 2 };
+    return games.sort(function (x, y) { return (r[x.state] - r[y.state]) || (new Date(x.date) - new Date(y.date)); });
+  }
+  function line(cur, open, fav) {
+    if (cur == null) return '<div class="v dim">&ndash;</div>';
+    var moved = open != null && String(open) !== String(cur);
+    return '<div class="v num' + (fav ? " fav" : "") + '">' + PV.esc(cur) + (moved ? "<small>" + PV.esc(open) + "</small>" : "") + "</div>";
+  }
+  function teamLine(t, g, other) {
+    var showScore = g.state !== "pre";
+    var lose = g.state === "post" && Number(t.score) < Number(other.score);
+    return '<div class="t' + (lose ? " lose" : "") + '">' + PV.logo("nfl", t.ab, t.ab, "#3a4452", 46) +
+      '<span class="n">' + PV.esc(String(t.name).toUpperCase()) + "</span>" + (t.la ? '<span class="la-tag">LA</span>' : "") +
+      '<span class="r num">' + PV.esc(t.rec) + "</span>" + (showScore ? '<span class="s num">' + PV.esc(t.score) + "</span>" : "") + "</div>";
+  }
+  function row(g) {
+    var when = g.state === "pre"
+      ? "<b>" + PV.dayPT(g.date) + " " + PV.timePT(g.date).replace(" PT", "") + "</b><span>" + PV.esc(g.net.toUpperCase()) + "</span>"
+      : g.state === "in" ? '<span class="pill live">LIVE</span><span>' + PV.esc(g.detail.toUpperCase()) + "</span>"
+      : '<span class="pill final">' + PV.esc(g.detail.toUpperCase()) + "</span><span>" + PV.esc(g.net.toUpperCase()) + "</span>";
+    var favA = g.spread.a && g.spread.a.charAt(0) === "-", favH = g.spread.h && g.spread.h.charAt(0) === "-";
+    return '<div class="g' + (g.away.la || g.home.la ? " la-row" : "") + '"><div class="when">' + when + "</div>" +
+      '<div class="teams">' + teamLine(g.away, g, g.home) + teamLine(g.home, g, g.away) + "</div>" +
+      '<div class="col">' + line(g.spread.a, g.spread.ao, favA) + line(g.spread.h, g.spread.ho, favH) + "</div>" +
+      '<div class="tot">' + (g.total.c ? "<b class=\"num\">" + PV.esc(String(g.total.c).replace(/^o/, "")) + "</b>" + (g.total.o && g.total.o !== g.total.c ? "<small>OPEN " + PV.esc(String(g.total.o).replace(/^o/, "")) + "</small>" : "<small>O/U</small>") : '<b class="dim">&ndash;</b>') + "</div>" +
+      '<div class="col">' + line(g.ml.a, g.ml.ao, favA) + line(g.ml.h, g.ml.ho, favH) + "</div></div>";
+  }
+  function show(games, week) {
+    var pages = Math.max(1, Math.ceil(games.length / PER_PAGE));
+    if (pager) pager.stop();
+    pager = PV.pager(pages, Math.round(CYCLE_MS / pages), function (i) {
+      var slice = games.slice(i * PER_PAGE, (i + 1) * PER_PAGE);
+      while (slice.length < PER_PAGE && pages > 1) slice.push(null);
+      document.getElementById("rows").innerHTML = slice.map(function (g) { return g ? row(g) : '<div class="g"></div>'; }).join("");
+      document.getElementById("pgtxt").textContent = (week ? "WEEK " + week : "") + (pages > 1 ? "  •  PAGE " + (i + 1) + " OF " + pages : "");
+    });
+  }
+  function load() {
+    PV.getJSON(ESPN, "nfl-scoreboard").then(function (res) {
+      if (!res) { PV.message("LINES LOADING", "RETRYING AUTOMATICALLY"); return; }
+      var games = order(parse(res.data));
+      if (!games.length) { PV.message("NO NFL GAMES THIS WEEK", "SEE YOU NEXT WEEK"); return; }
+      show(games, res.data.week && res.data.week.number);
+      PV.updated(res);
+    });
+  }
+  load();
+  setInterval(load, 5 * 60 * 1000);
+})();
+</script>
+</body>
+</html>
