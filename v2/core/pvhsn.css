@@ -30,7 +30,7 @@ body{font-family:"B",Arial,sans-serif;color:var(--ink);-webkit-font-smoothing:an
 .mark-name{font-family:"BC";font-weight:700;font-size:22px;letter-spacing:5px;color:var(--dim)}
 .board-title{font-family:"BC";font-weight:800;font-size:56px;letter-spacing:2px;line-height:1;margin-top:2px}
 .board-title em{font-style:normal;color:var(--accent)}
-.hd .pvlogo{position:absolute;left:50%;top:17px;height:78px;transform:translateX(-50%);filter:invert(1)}
+.hd .pvlogo{position:absolute;left:50%;top:17px;height:78px;transform:translateX(-50%)}
 .hd-right{margin-left:auto;text-align:right}
 .hd .upd{display:none;font-family:"BC";font-weight:600;font-size:16px;letter-spacing:2px;color:var(--faint);margin-top:5px}
 .hd .upd.stale{display:block;color:var(--amber)}

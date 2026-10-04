@@ -44,7 +44,7 @@
       '<div class="mark"><div class="mark-badge">PV<br>HSN</div><div>' +
       '<div class="mark-name">P.V. HOUSE SPORTS NETWORK</div>' +
       '<div class="board-title" id="boardTitle">' + opts.title + "</div></div></div>" +
-      '<img class="pvlogo" src="core/pv-house-logo.png" alt="P.V. House">' +
+      '<img class="pvlogo" src="core/pv-house-logo-white.png" alt="P.V. House">' +
       '<div class="hd-right"><div class="clock num" id="clock"></div><div class="date" id="date"></div>' +
       '<div class="upd" id="updated">LOADING&hellip;</div></div>';
     var ft = document.createElement("footer");
