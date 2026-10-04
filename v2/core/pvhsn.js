@@ -139,6 +139,11 @@
       if (count > 1) timer = setInterval(function () { show((idx + 1) % count); }, ms);
     }
     render(0);
+    if (PV.directed) {
+      // Inside the Director: wait until the Director actually puts this board on screen
+      if (PV.onScreen) start(); else PV.whenShown(start);
+      return { stop: function () { clearInterval(timer); } };
+    }
     var raf = window.requestAnimationFrame || function (f) { setTimeout(f, 0); };
     raf(start);
     document.addEventListener("visibilitychange", function () {
@@ -146,6 +151,19 @@
     });
     return { stop: function () { clearInterval(timer); } };
   };
+
+  /* ---- Director hand-off: the Director preloads a board hidden, then tells it "you're on" ---- */
+  PV.directed = PV.qs("director") === "1";
+  PV.onScreen = !PV.directed;
+  var shownCallbacks = [];
+  PV.whenShown = function (f) { shownCallbacks.push(f); };
+  window.addEventListener("message", function (e) {
+    if (e.data === "pvhsn-show" && !PV.onScreen) {
+      PV.onScreen = true;
+      var list = shownCallbacks; shownCallbacks = [];
+      list.forEach(function (f) { f(); });
+    }
+  });
 
   /* ---- Small helpers ---- */
   PV.hex = function (c, fallback) {
