@@ -44,14 +44,15 @@
       '<div class="mark"><div class="mark-badge">PV<br>HSN</div><div>' +
       '<div class="mark-name">P.V. HOUSE SPORTS NETWORK</div>' +
       '<div class="board-title" id="boardTitle">' + opts.title + "</div></div></div>" +
-      '<div class="hd-right"><div class="clock num" id="clock"></div><div class="date" id="date"></div></div>';
+      '<img class="pvlogo" src="core/pv-house-logo.png" alt="P.V. House">' +
+      '<div class="hd-right"><div class="clock num" id="clock"></div><div class="date" id="date"></div>' +
+      '<div class="upd" id="updated">LOADING&hellip;</div></div>';
     var ft = document.createElement("footer");
     ft.className = "ft";
     ft.innerHTML =
-      '<div class="src">' + PV.esc(opts.source || "") + "</div>" +
-      '<img class="pvlogo" src="core/pv-house-logo.png" alt="P.V. House">' +
+      '<div class="web">PVHOUSELA.COM &bull; @P.V.HOUSE</div>' +
       '<div class="pager" id="pager"></div>' +
-      '<div class="upd" id="updated">LOADING&hellip;</div>';
+      '<div class="addr">12751 MILLENNIUM DR #140 &bull; PLAYA VISTA &bull; (424) 500-8229</div>';
     st.insertBefore(hd, st.firstChild);
     st.appendChild(ft);
     PV.tick();

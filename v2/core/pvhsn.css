@@ -30,17 +30,18 @@ body{font-family:"B",Arial,sans-serif;color:var(--ink);-webkit-font-smoothing:an
 .mark-name{font-family:"BC";font-weight:700;font-size:22px;letter-spacing:5px;color:var(--dim)}
 .board-title{font-family:"BC";font-weight:800;font-size:56px;letter-spacing:2px;line-height:1;margin-top:2px}
 .board-title em{font-style:normal;color:var(--accent)}
-.hd-right{margin-left:auto;text-align:right}
+.hd .pvlogo{margin-left:auto;height:78px;filter:invert(1);margin-right:36px}
+.hd-right{text-align:right;min-width:230px;padding-left:36px;border-left:1px solid var(--line2)}
+.hd .upd{font-family:"BC";font-weight:600;font-size:16px;letter-spacing:2px;color:var(--faint);margin-top:5px}
+.hd .upd.stale{color:var(--amber)}
 .clock{font-family:"BC";font-weight:700;font-size:44px;letter-spacing:1px;line-height:1}
 .date{font-family:"BC";font-weight:600;font-size:20px;letter-spacing:3px;color:var(--dim);margin-top:6px}
 
 /* Footer */
 .ft{position:absolute;left:0;right:0;bottom:0;height:64px;display:flex;align-items:center;padding:0 64px;
   border-top:1px solid var(--line);font-family:"BC";font-weight:600;font-size:20px;letter-spacing:3px;color:var(--faint)}
-.ft .src{flex:1}
-.ft .pvlogo{height:40px;filter:invert(1);opacity:.85}
-.ft .upd{flex:1;text-align:right}
-.ft .upd.stale{color:var(--amber)}
+.ft .web,.ft .addr{flex:1;color:var(--dim)}
+.ft .addr{text-align:right}
 .pager{display:flex;gap:10px;align-items:center;margin:0 32px}
 .pager i{display:block;width:44px;height:6px;background:var(--line2);position:relative;overflow:hidden}
 .pager i.on:after{content:"";position:absolute;left:0;top:0;bottom:0;width:100%;background:var(--accent);
