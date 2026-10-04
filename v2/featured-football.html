@@ -9,6 +9,7 @@
 <style>
   .banner{height:92px;display:flex;align-items:center;gap:22px}
   .banner h1{font-family:"BC";font-weight:800;font-size:70px;letter-spacing:3px;line-height:1;color:var(--amber)}
+  .banner .sub b{display:block;color:var(--ink);font-weight:700;font-size:30px;letter-spacing:4px}
   .banner .sub{margin-left:auto;text-align:right;font-family:"BC";font-weight:600;font-size:24px;letter-spacing:3px;color:var(--dim);line-height:1.35}
   .hero{height:300px;display:grid;grid-template-columns:1fr 420px 1fr;align-items:center;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
     background:linear-gradient(90deg,var(--ac) 0,transparent 30%,transparent 70%,var(--hc) 100%)}
@@ -51,7 +52,11 @@
 (function () {
   var ESPN = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard";
   var LOGO_FILE = { WSH: "was" };
-  PV.frame({ title: "FEATURED <em>FOOTBALL</em>", source: "SOURCE: ESPN / DRAFTKINGS" });
+  // ?mode=la    -> Los Angeles games only (Rams, Chargers)
+  // ?mode=prime -> the big game of the week (Sunday / Monday / Thursday night)
+  // no mode     -> original behaviour (LA game if there is one, otherwise the big game)
+  var MODE = PV.qs("mode") || "";
+  PV.frame({ title: MODE === "la" ? "LOS ANGELES <em>FOOTBALL</em>" : "FEATURED <em>FOOTBALL</em>", source: "SOURCE: ESPN / DRAFTKINGS" });
 
   function get(o, path) { return path.split(".").reduce(function (a, k) { return a && a[k] != null ? a[k] : null; }, o); }
   function etParts(iso) {
@@ -78,7 +83,7 @@
       (c.broadcasts || []).forEach(function (b) { nets = nets.concat(b.names || []); });
       var o = (c.odds || [])[0] || {}, et = etParts(e.date);
       return {
-        date: e.date, state: ty.state, detail: ty.shortDetail || "", net: nets.join(" / "),
+        id: e.id, date: e.date, state: ty.state, detail: ty.shortDetail || "", net: nets.join(" / "),
         venue: [get(c, "venue.fullName"), get(c, "venue.address.city")].filter(Boolean).join(" • "),
         note: ((c.notes || [])[0] || {}).headline || "", et: et,
         prime: et.hour >= 19 && /Thursday|Sunday|Monday/.test(et.day) || (et.hour >= 19 && et.day === "Saturday" && new Date(e.date).getMonth() >= 11),
@@ -86,14 +91,49 @@
       };
     });
   }
-  // Who gets the spotlight: LA game today > live prime-time > next prime-time > next game > latest final
+  // Who gets the spotlight. Returns a list; more than one game rotates like Featured Baseball.
+  //   LA games: before kickoff every LA game rotates; while one is live only the live LA game(s);
+  //   a finished LA game stays up about 45 minutes after it ends (kickoff + 4h15m).
+  //   No LA game: live prime-time > just-ended prime-time > next prime-time > live > next > latest final.
   function pick(games) {
-    var today = ptDay(new Date().toISOString()), now = Date.now();
-    var recent = function (g) { return g.state !== "post" || now - new Date(g.date) < 4.5 * 3600 * 1000; };
+    var now = Date.now();
+    var recent = function (g) { return g.state !== "post" || now - new Date(g.date) < 4.25 * 3600 * 1000; };
     var soon = function (g) { var dt = new Date(g.date) - now; return dt < 18 * 3600 * 1000; };   // kicks off within 18 hours, or already started
-    var la = games.filter(function (g) { return (g.away.la || g.home.la) && soon(g) && recent(g); })
-      .sort(function (x, y) { return (x.state === "in" ? -1 : 0) - (y.state === "in" ? -1 : 0) || (x.state === "post") - (y.state === "post") || new Date(x.date) - new Date(y.date); });
-    if (la.length) return la[0];
+    if (MODE === "prime") { var pg = pickPrime(games, recent); return pg ? [pg] : []; }
+    var la = games.filter(function (g) { return (g.away.la || g.home.la) && soon(g) && recent(g); });
+    var laLive = la.filter(function (g) { return g.state === "in"; });
+    if (laLive.length) return laLive.sort(function (x, y) { return new Date(x.date) - new Date(y.date); });
+    if (la.length) return la.sort(function (x, y) { return (x.state === "post") - (y.state === "post") || new Date(x.date) - new Date(y.date); });
+    if (MODE === "la") {
+      // no LA game in the next 18 hours: preview the next one on the schedule, else fall back to the big game
+      var nextLA = games.filter(function (g) { return (g.away.la || g.home.la) && g.state === "pre"; })
+        .sort(function (x, y) { return new Date(x.date) - new Date(y.date); })[0];
+      if (nextLA) return [nextLA];
+      var pp = pickPrime(games, recent); return pp ? [pp] : [];
+    }
+    var one = pickOther(games, recent);
+    return one ? [one] : [];
+  }
+  // The big game of the week: live prime-time > prime-time that just ended > next prime-time > anything else
+  function pickPrime(games, recent) {
+    var prime = games.filter(function (g) { return g.prime; });
+    var live = prime.filter(function (g) { return g.state === "in"; })[0];
+    if (live) return live;
+    var ended = prime.filter(function (g) { return g.state === "post" && recent(g); })
+      .sort(function (x, y) { return new Date(y.date) - new Date(x.date); })[0];
+    if (ended) return ended;
+    var next = prime.filter(function (g) { return g.state === "pre"; }).sort(function (x, y) { return new Date(x.date) - new Date(y.date); })[0];
+    return next || pickOther(games, recent);
+  }
+  // "JOIN US TONIGHT" / "JOIN US TOMORROW NIGHT" / "JOIN US THURSDAY NIGHT" for an upcoming prime-time game
+  function joinUs(g) {
+    if (g.state !== "pre" || !g.prime || MODE === "la") return "";
+    var day = PV.fmt(new Date(g.date), { weekday: "long" }).toUpperCase();
+    var today = PV.fmt(new Date(), { weekday: "long" }).toUpperCase();
+    var tmrw = PV.fmt(new Date(Date.now() + 864e5), { weekday: "long" }).toUpperCase();
+    return "JOIN US " + (day === today ? "TONIGHT" : day === tmrw ? "TOMORROW NIGHT" : day + " NIGHT");
+  }
+  function pickOther(games, recent) {
     var live = games.filter(function (g) { return g.state === "in"; });
     var livePrime = live.filter(function (g) { return g.prime; })[0];
     if (livePrime) return livePrime;
@@ -108,7 +148,7 @@
       var n = { Thursday: "THURSDAY", Sunday: "SUNDAY", Monday: "MONDAY", Saturday: "SATURDAY", Friday: "FRIDAY" }[g.et.day];
       if (n) return n + " NIGHT FOOTBALL";
     }
-    if (g.away.la || g.home.la) return "LOS ANGELES GAME DAY";
+    if ((g.away.la || g.home.la) && MODE !== "prime") return "LOS ANGELES GAME DAY";
     if (/london|international|germany|mexico|brazil|ireland|spain/i.test(g.note)) return "INTERNATIONAL SERIES";
     return "FEATURED MATCHUP";
   }
@@ -145,16 +185,25 @@
           '<div class="cat">' + c[1] + '</div><div class="p r"><b>' + PV.esc((h.who || "–").toUpperCase()) + "</b><span>" + PV.esc((h.stat || "").toUpperCase()) + "</span></div></div>";
       }).join("") + "</div>";
     document.getElementById("main").innerHTML =
-      '<div class="banner"><h1>' + label(g) + '</h1><div class="sub">' + PV.esc(g.venue.toUpperCase()) + "</div></div>" +
+      '<div class="banner"><h1>' + label(g) + '</h1><div class="sub">' + (joinUs(g) ? "<b>" + joinUs(g) + "</b>" : "") + PV.esc(g.venue.toUpperCase()) + "</div></div>" +
       '<div class="hero" style="--ac:' + g.away.color + "66;--hc:" + g.home.color + '66">' + teamBlock(g.away, "away") + '<div class="mid">' + mid + "</div>" + teamBlock(g.home, "home") + "</div>" +
       '<div class="low">' + lines + leaders + "</div>";
   }
+  var CYCLE = Number(PV.qs("cycle")) || 20;   // seconds per game when more than one is featured
+  var list = [], key = "", pager = null;
   function load() {
     PV.getJSON(ESPN, "nfl-scoreboard").then(function (res) {
-      if (!res) { PV.message("FOOTBALL LOADING", "RETRYING AUTOMATICALLY"); return; }
-      var g = pick(parse(res.data));
-      if (!g) { PV.message("NO NFL GAMES THIS WEEK", "SEE YOU NEXT WEEK"); return; }
-      render(g);
+      if (!res) { if (!list.length) PV.message("FOOTBALL LOADING", "RETRYING AUTOMATICALLY"); return; }
+      var games = pick(parse(res.data));
+      if (!games.length) { PV.message("NO NFL GAMES THIS WEEK", "SEE YOU NEXT WEEK"); list = []; key = ""; return; }
+      list = games;
+      var k = games.map(function (g) { return g.id; }).join(",");
+      if (k !== key) {
+        // a different set of games: restart the rotation from the first one
+        key = k;
+        if (pager) pager.stop();
+        pager = PV.pager(list.length, CYCLE * 1000, function (i) { if (list[i]) render(list[i]); });
+      } else if (list.length === 1) render(list[0]);   // same single game: refresh the score now
       PV.updated(res);
     });
   }

@@ -56,7 +56,15 @@
         upcoming: t.filter(function (e) { return st(e) === "pre"; }).length,
         started: t.some(function (e) { return st(e) !== "pre"; }),
         laToday: function (lg) { return t.some(function (e) { return la(e, lg); }); },
-        laLive: function (lg) { return t.some(function (e) { return st(e) === "in" && la(e, lg); }); }
+        laLive: function (lg) { return t.some(function (e) { return st(e) === "in" && la(e, lg); }); },
+        // LA games kicking off in the next 24 hours (Saturday preview of Sunday, etc.)
+        laSoon: function (lg) { return ev.filter(function (e) { var dt = new Date(e.date) - Date.now(); return la(e, lg) && st(e) === "pre" && dt > 0 && dt < 864e5; }).length; },
+        // how many LA games the featured board will rotate (same rule as featured-football.html)
+        laShow: function (lg) {
+          var l = t.filter(function (e) { return la(e, lg) && (st(e) !== "post" || Date.now() - new Date(e.date) < 4.25 * 3600 * 1000); });
+          var live = l.filter(function (e) { return st(e) === "in"; });
+          return live.length || l.length;
+        }
       };
     });
   }
@@ -95,12 +103,15 @@
     if (nfl.today) {
       var nflBig = nfl.live || nfl.laLive("nfl") ? 3 : 2;
       var nflRank = nfl.live ? 3 : 2;
-      add("Featured Football", "featured-football.html", 20, nflBig, nflRank);
+      var laN = nfl.laShow("nfl");   // LA games the LA board will rotate (0 = none today)
+      if (laN) add("LA Football" + (laN > 1 ? " (" + laN + " games)" : ""), "featured-football.html?mode=la&cycle=20", 20 * laN + 2, nflBig, nflRank);
+      add("Featured Football (big game)", "featured-football.html?mode=prime", 20, nflBig, nflRank);
       add(nfl.started && nfl.today >= 3 ? "NFL Scoreboard" : "NFL Lines", "nfl.html?cycle=36", 38, nflBig, nflRank);
       note.push("NFL: " + nfl.today + " game" + (nfl.today > 1 ? "s" : "") + " today" + (nfl.live ? ", " + nfl.live + " live" : ""));
     } else {
       add("NFL Lines", "nfl.html?cycle=36", 38, 1, 1);
-      add("Featured Football (next game)", "featured-football.html", 20, 1, 1);
+      if (nfl.laSoon("nfl")) add("LA Football (preview)", "featured-football.html?mode=la&cycle=20", 22, 1, 1);
+      add("Featured Football (big game)", "featured-football.html?mode=prime", 20, 1, 1);
       add(flip ? "NFL Standings NFC" : "NFL Standings AFC", "nfl-standings.html?conf=" + (flip ? "NFC" : "AFC"), 15, 1, 1);
       note.push("NFL: no games today, lines + one standings board");
     }
