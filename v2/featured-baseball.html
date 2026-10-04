@@ -108,7 +108,7 @@
   function seriesTitle(g) {
     if (!POSTSEASON[g.gameType]) return isLA(g) ? "LOS ANGELES <span>BASEBALL</span>" : "FEATURED <span>MATCHUP</span>";
     var desc = (g.seriesDescription || get(g, "seriesStatus.description") || "POSTSEASON").toUpperCase();
-    return PV.esc(desc) + (g.seriesGameNumber ? " <span>&bull; GAME " + g.seriesGameNumber + "</span>" : "");
+    return PV.esc(desc) + (g.seriesGameNumber ? " <span>&bull; GAME " + g.seriesGameNumber + (g.gamesInSeries ? " OF " + g.gamesInSeries : "") + "</span>" : "");
   }
   function seriesLine(g) {
     var ss = g.seriesStatus || {};
@@ -175,7 +175,7 @@
 
     document.getElementById("main").innerHTML =
       '<div class="banner"><h1>' + seriesTitle(g) + '</h1><div class="sub"><b>' + PV.esc(seriesLine(g)) + "</b><span>" +
-      PV.esc(String(get(g, "venue.name") || "").toUpperCase()) + (games.length > 1 ? " &bull; GAME " + (shown + 1) + " OF " + games.length + " TODAY" : "") + "</span></div></div>" +
+      PV.esc(String(get(g, "venue.name") || "").toUpperCase()) + (g.doubleHeader && g.doubleHeader !== "N" ? " &bull; DOUBLEHEADER GAME " + (g.gameNumber || 1) : "") + (games.length > 1 ? " &bull; " + (shown + 1) + " OF " + games.length + " GAMES TODAY" : "") + "</span></div></div>" +
       '<div class="hero" style="--ac:' + (COLORS[a.id] || "#333333") + "55;--hc:" + (COLORS[h.id] || "#333333") + '55">' + teamBlock("away", g, "away") + '<div class="mid">' + mid + "</div>" + teamBlock("home", g, "home") + "</div>" +
       table + facts;
   }
