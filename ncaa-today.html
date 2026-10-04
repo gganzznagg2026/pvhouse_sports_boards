@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, initial-scale=1">
+  <title>PVHSN • NCAA Football Today</title>
+  <style>
+    :root{--ink:#f4f1eb;--muted:#9ea5ad;--line:rgba(255,255,255,.14);--panel:rgba(8,11,15,.76);--red:#d64040;--gold:#f2bd54;--green:#8ecf9e}
+    *{box-sizing:border-box}html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#080a0d;color:var(--ink);font-family:Arial,Helvetica,sans-serif}body{background:radial-gradient(ellipse at 50% -16%,#30333a 0,#11151b 38%,#080a0d 78%)}
+    .screen{height:100%;position:relative;padding:0 82px}.screen:before{content:"";position:absolute;inset:0;opacity:.12;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:78px 78px;mask-image:linear-gradient(to bottom,#000,transparent 76%)}
+    .masthead{height:112px;margin:0 -82px;padding:25px 82px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:rgba(7,9,12,.86);position:relative}.brand{display:flex;align-items:center;gap:21px}.brand-mark{width:58px;height:58px;border:2px solid var(--gold);display:grid;place-items:center;color:var(--gold);font-weight:900;font-size:14px;letter-spacing:1px;transform:skew(-9deg)}.brand-name{font-size:31px;font-weight:900;letter-spacing:4px;line-height:1}.brand-sub{margin-top:8px;color:#aeb1b5;font-size:17px;font-weight:700;letter-spacing:2px}.location{text-align:right;color:var(--muted);font-size:14px;line-height:1.55;letter-spacing:1.1px;font-weight:700}.location strong{display:block;color:var(--ink);font-size:22px;letter-spacing:3px}.contact{display:block;margin-top:5px;color:#b7bdc3}
+    .titlebar{height:106px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.kicker{color:var(--gold);font-size:15px;font-weight:900;letter-spacing:3px}.title{margin-top:8px;font-size:38px;font-weight:900;letter-spacing:2px}.updated{text-align:right;color:#858d96;font-size:14px;line-height:1.7;letter-spacing:1.4px}
+    .legend{height:48px;display:flex;align-items:center;gap:25px;color:#8c949c;font-size:13px;font-weight:900;letter-spacing:1.6px;border-bottom:1px solid var(--line)}.legend span{display:inline-flex;align-items:center;gap:8px}.dot{width:8px;height:8px;border-radius:50%;display:inline-block}.dot.final{background:#a9b0b7}.dot.upcoming{background:var(--gold)}
+    .section{height:37px;margin-top:18px;display:flex;align-items:center;justify-content:space-between;color:var(--gold);font-size:15px;font-weight:900;letter-spacing:2.5px}.section small{color:#6e767f;font-size:12px;letter-spacing:1.2px}
+    .games{height:697px;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:118px;gap:4px 14px;overflow:hidden}.empty{grid-column:1/-1;display:grid;place-items:center;color:#747d86;font-size:18px;letter-spacing:1.5px;border:1px solid var(--line);background:rgba(5,7,10,.45)}
+    .game{display:grid;grid-template-columns:1fr 124px 160px;align-items:center;min-width:0;padding:17px 23px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(105deg,rgba(24,27,32,.9),rgba(8,11,15,.8));position:relative}.game.final{border-left:4px solid #737b84}.game.upcoming{border-left:4px solid var(--gold)}.game:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(255,255,255,.025))}
+    .teams{display:flex;flex-direction:column;gap:10px;min-width:0}.team{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.team.away{color:#b8bec4;font-weight:500}.badge{width:27px;height:27px;display:inline-grid;place-items:center;flex:0 0 27px;border:1px solid #727a83;color:#cbd0d4;font-size:9px;font-weight:900;letter-spacing:.5px}.score{font-size:28px;font-weight:900;text-align:center;line-height:1.3}.score span{display:block}.score.final-score{color:#fff}.score.empty-score{color:#636b73}.meta{text-align:right;color:#9098a0;font-size:13px;line-height:1.6;letter-spacing:1px}.meta strong{display:block;color:#d8dce0;font-size:15px;letter-spacing:1.4px}.meta .final-text{color:#aeb5bb}.meta .upcoming-text{color:var(--gold)}
+    .footer{position:absolute;left:82px;right:82px;bottom:23px;display:flex;justify-content:space-between;color:#757d85;font-size:12px;font-weight:700;letter-spacing:1.5px}.footer .warn{color:#a99c81}
+  </style>
+</head>
+<body>
+  <main class="screen" aria-label="PVHSN NCAA football today board">
+    <header class="masthead"><div class="brand"><div class="brand-mark">PV<br>HSN</div><div><div class="brand-name">P.V. HOUSE SPORTS NETWORK</div><div class="brand-sub">NCAA FOOTBALL • TODAY'S SLATE</div></div></div><div class="location"><strong>PV HOUSE • PLAYA VISTA</strong><span class="contact">12751 Millennium Dr #140 • (424) 500-8229</span></div></header>
+    <section class="titlebar"><div><div class="kicker">COLLEGE FOOTBALL</div><div class="title" id="date-title">TODAY'S GAMES</div></div><div class="updated">FINALS + UPCOMING<br><span id="updated">UPDATING…</span></div></section>
+    <div class="legend"><span><i class="dot final"></i> FINAL</span><span><i class="dot upcoming"></i> UPCOMING</span><span>IN-PROGRESS GAMES OMITTED</span></div>
+    <div class="section"><span>FINAL SCORES</span><small id="final-count"></small></div><div class="games" id="finals"><div class="empty">LOADING FINAL SCORES…</div></div>
+    <div class="section"><span>UPCOMING</span><small id="upcoming-count"></small></div><div class="games" id="upcoming"><div class="empty">LOADING UPCOMING GAMES…</div></div>
+    <footer class="footer"><span>PVHSN • NCAA FOOTBALL DAILY BOARD</span><span class="warn">SCORES + KICKOFFS • ODDS OMITTED BY DESIGN</span></footer>
+  </main>
+  <script>
+    'use strict';
+    const DATA_URL='https://pv-house-sports.gian-ganziano.workers.dev/ncaaf';
+    const $=id=>document.getElementById(id);
+    const shortName=name=>String(name||'TEAM').replace(/\s+(?:Trojans|Bruins|Bulldogs|Tigers|Eagles|Wildcats|Cardinals|Panthers|Bears|Longhorns|Sooners|Cowboys|Volunteers|Gators|Hurricanes|Seminoles|Hokies|Crimson Tide|Razorbacks|Gamecocks|Aggies|Wolverines|Buckeyes|Spartans|Fighting Irish|Nittany Lions|Hawkeyes|Badgers|Boilermakers|Cornhuskers|Jayhawks|Cyclones|Knights|Mustangs|Cougars|Ducks|Beavers|Buffaloes|Sun Devils|Utes|Bruins|Golden Bears|Cardinal|Wolfpack|Demon Deacons|Tar Heels|Yellow Jackets|Cavaliers|Commodores|Razorbacks|Rebels|Owls|Rockets|Broncos|Falcons|Huskies|Aztecs|Warriors|Rainbow Warriors)$/i,'');
+    const initials=name=>shortName(name).split(/\s+/).map(x=>x[0]).join('').slice(0,3).toUpperCase();
+    const dateKey=(value)=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value));
+    const today=dateKey(new Date());
+    $('date-title').textContent=new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',weekday:'long',month:'long',day:'numeric'}).format(new Date()).toUpperCase();
+    function score(game,team){const item=Array.isArray(game.scores)?game.scores.find(x=>x.name===team):null;return item?.score ?? '—';}
+    function card(game,final){const away=game.away_team||'Away Team',home=game.home_team||'Home Team';const when=new Date(game.commence_time);const time=new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',weekday:'short',hour:'numeric',minute:'2-digit'}).format(when).toUpperCase();return `<article class="game ${final?'final':'upcoming'}"><div class="teams"><div class="team away"><span class="badge">${initials(away)}</span>${shortName(away)}</div><div class="team"><span class="badge">${initials(home)}</span>${shortName(home)}</div></div><div class="score ${final?'final-score':'empty-score'}"><span>${final?score(game,away):'—'}</span><span>${final?score(game,home):'—'}</span></div><div class="meta"><strong class="${final?'final-text':'upcoming-text'}">${final?'FINAL':time}</strong><span>${final?'FINAL SCORE':'KICKOFF PT'}</span></div></article>`;}
+    function render(id,games,final){$(id).innerHTML=games.length?games.slice(0,8).map(g=>card(g,final)).join(''):'<div class="empty">NO GAMES IN THIS SECTION</div>';}
+    async function load(){try{const response=await fetch(DATA_URL,{cache:'no-store'});if(!response.ok)throw Error('feed unavailable');const all=await response.json();const todays=Array.isArray(all)?all.filter(g=>dateKey(g.commence_time)===today):[];const finals=todays.filter(g=>g.completed===true);const upcoming=todays.filter(g=>g.completed!==true && !(Array.isArray(g.scores)&&g.scores.length));render('finals',finals,true);render('upcoming',upcoming,false);$('final-count').textContent=`${finals.length} GAMES`;$('upcoming-count').textContent=`${upcoming.length} GAMES`;$('updated').textContent='UPDATED '+new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',hour:'numeric',minute:'2-digit'}).format(new Date())+' PT';}catch(error){$('finals').innerHTML='<div class="empty">NCAA DATA UNAVAILABLE</div>';$('upcoming').innerHTML='<div class="empty">TRY AGAIN SHORTLY</div>';}}
+    load();setInterval(load,300000);
+  </script>
+</body>
+</html>
