@@ -104,61 +104,61 @@
       var nflBig = nfl.live || nfl.laLive("nfl") ? 3 : 2;
       var nflRank = nfl.live ? 3 : 2;
       var laN = nfl.laShow("nfl");   // LA games the LA board will rotate (0 = none today)
-      if (laN) add("LA Football" + (laN > 1 ? " (" + laN + " games)" : ""), "featured-football.html?mode=la&cycle=20", 20 * laN + 2, nflBig, nflRank);
-      add("Featured Football (big game)", "featured-football.html?mode=prime", 20, nflBig, nflRank);
-      add(nfl.started && nfl.today >= 3 ? "NFL Scoreboard" : "NFL Lines", "nfl.html?cycle=36", 38, nflBig, nflRank);
+      if (laN) add("LA Football" + (laN > 1 ? " (" + laN + " games)" : ""), "featured-football.html?mode=la&page=20", 20 * laN, nflBig, nflRank);
+      add("Featured Football (big game)", "featured-football.html?mode=prime&page=20", 20, nflBig, nflRank);
+      add(nfl.started && nfl.today >= 3 ? "NFL Scoreboard" : "NFL Lines", "nfl.html?page=20", 40, nflBig, nflRank);
       note.push("NFL: " + nfl.today + " game" + (nfl.today > 1 ? "s" : "") + " today" + (nfl.live ? ", " + nfl.live + " live" : ""));
     } else {
-      add("NFL Lines", "nfl.html?cycle=36", 38, 1, 1);
-      if (nfl.laSoon("nfl")) add("LA Football (preview)", "featured-football.html?mode=la&cycle=20", 22, 1, 1);
-      add("Featured Football (big game)", "featured-football.html?mode=prime", 20, 1, 1);
-      add(flip ? "NFL Standings NFC" : "NFL Standings AFC", "nfl-standings.html?conf=" + (flip ? "NFC" : "AFC"), 15, 1, 1);
+      add("NFL Lines", "nfl.html?page=20", 40, 1, 1);
+      if (nfl.laSoon("nfl")) add("LA Football (preview)", "featured-football.html?mode=la&page=20", 20, 1, 1);
+      add("Featured Football (big game)", "featured-football.html?mode=prime&page=20", 20, 1, 1);
+      add(flip ? "NFL Standings NFC" : "NFL Standings AFC", "nfl-standings.html?conf=" + (flip ? "NFC" : "AFC"), 18, 1, 1);
       note.push("NFL: no games today, lines + one standings board");
     }
     // College football
     grp = "ncaa";
     if (ncaa.today >= 10) {
-      add("NCAA Scoreboard", "ncaa-football.html?cycle=72", 74, ncaa.live ? 2 : 1, ncaa.live ? 3 : 2);
+      add("NCAA Scoreboard", "ncaa-football.html?page=20", 100, ncaa.live ? 2 : 1, ncaa.live ? 3 : 2);
       note.push("College: " + ncaa.today + " games today");
     } else if (ncaa.today > 0) {
-      add("NCAA Scoreboard", "ncaa-football.html?cycle=24", 26, 1, ncaa.live ? 3 : 2);
+      add("NCAA Scoreboard", "ncaa-football.html?page=20", 20, 1, ncaa.live ? 3 : 2);
       note.push("College: " + ncaa.today + " games today");
     } else note.push("College: no games today, AP Top 25 only");
-    add("NCAA AP Top 25", "ncaa-top25.html", 20, 1, ncaa.today ? 2 : 1);
+    add("NCAA AP Top 25", "ncaa-top25.html", 25, 1, ncaa.today ? 2 : 1);
     // Baseball
     grp = "mlb";
     if (mlb.today) {
-      var bbSecs = Math.min(60, Math.max(20, mlb.today * 10));
-      add("Featured Baseball", "featured-baseball.html?cycle=" + bbSecs, bbSecs + 2, mlb.live || mlb.laLive || mlb.post ? 2 : 1, mlb.live ? 3 : 2);
+      var bbGames = mlb.post ? mlb.today : Math.min(4, mlb.today);   // the board rotates every postseason game, max 4 otherwise
+      add("Featured Baseball", "featured-baseball.html?page=22", 22 * bbGames, mlb.live || mlb.laLive || mlb.post ? 2 : 1, mlb.live ? 3 : 2);
       note.push("MLB: " + mlb.today + " game" + (mlb.today > 1 ? "s" : "") + " today" + (mlb.post ? " (postseason)" : ""));
     } else note.push("MLB: no games today");
     // Hockey
     grp = "nhl";
     if (nhl.today) {
-      add("NHL Scores & Lines", "nhl.html?cycle=36", 38, nhl.live || nhl.laLive("nhl") ? 2 : 1, nhl.live ? 3 : 2);
-      add("NHL Standings West", "nhl-standings.html?conf=WEST", 15, 1, 2);
-      add("NHL Standings East", "nhl-standings.html?conf=EAST", 15, 1, 2);
+      add("NHL Scores & Lines", "nhl.html?page=18", 36, nhl.live || nhl.laLive("nhl") ? 2 : 1, nhl.live ? 3 : 2);
+      add("NHL Standings West", "nhl-standings.html?conf=WEST", 18, 1, 2);
+      add("NHL Standings East", "nhl-standings.html?conf=EAST", 18, 1, 2);
       note.push("NHL: " + nhl.today + " game" + (nhl.today > 1 ? "s" : "") + " today");
     } else {
-      add(flip ? "NHL Standings East" : "NHL Standings West", "nhl-standings.html?conf=" + (flip ? "EAST" : "WEST"), 15, 1, 1);
+      add(flip ? "NHL Standings East" : "NHL Standings West", "nhl-standings.html?conf=" + (flip ? "EAST" : "WEST"), 18, 1, 1);
       note.push("NHL: no games today, one standings board");
     }
     // Sports Wire headlines: only when nothing is live (slow days, mornings, between games)
     grp = "news";
     if (!(nfl.live || ncaa.live || mlb.live || nhl.live)) {
-      add("Sports Wire (headlines)", "headlines.html?cycle=20", 62, 1, 1);
+      add("Sports Wire (headlines)", "headlines.html?page=20", 60, 1, 1);
       note.push("Headlines: nothing live right now, Sports Wire added");
     }
     grp = "house";
     // House: Happy Hour gets a second showing from 2 to 6 PM on weekdays
     var wd = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].indexOf(weekday()) >= 0, hr = ptHour();
-    add("Happy Hour", "happy-hour.html", 15, wd && hr >= 14 && hr < 18 ? 2 : 1, 2);
+    add("Happy Hour", "happy-hour.html", 18, wd && hr >= 14 && hr < 18 ? 2 : 1, 2);
     // Weekend brunch: Saturday & Sunday until 1:30 PM, shown twice per loop while it's being served
     if (!wd && (hr < 13 || (hr === 13 && Number(PV.fmt(new Date(), { minute: "numeric" })) < 30))) {
-      add("Weekend Brunch", "brunch.html", 15, hr >= 10 ? 2 : 1, 3);
+      add("Weekend Brunch", "brunch.html", 20, hr >= 10 ? 2 : 1, 3);
       note.push("Brunch: weekend, shown until 1:30 PM");
     }
-    add("Events & Specials", "events.html", 15, 1, 2);
+    add("Events & Specials", "events.html", 20, 1, 2);
 
     // ---- Order: one sport at a time, with a restaurant board between every sport ----
     // 1. Group each sport's boards together; the busiest sport (live > games today > off day) goes first.
@@ -209,6 +209,7 @@
     var b = lineup[step % lineup.length];
     var incoming = frames[1 - cur], outgoing = frames[cur];
     incoming.onload = null;
+    incoming.pvPages = null;
     incoming.src = src(b);
     // give the new board up to 3 seconds to load before it fades in
     var swapped = false;
@@ -219,11 +220,36 @@
       setTimeout(function () { outgoing.src = "about:blank"; }, 600);   // free the old board's memory
       cur = 1 - cur;
       showPlan();
-      setTimeout(advance, b.secs * 1000);
+      shownAt = Date.now();
+      schedule(incoming, b);
     };
     incoming.onload = function () { setTimeout(swap, 400); };
     setTimeout(swap, 3000);
   }
+  // ---- How long a board stays up ----
+  // Paged boards report "N pages x M seconds"; single-page boards use the reading time in the lineup.
+  var dwellTimer = null, shownAt = 0;
+  function dwellMs(frame, b) {
+    var p = frame.pvPages;
+    var ms = p ? p.pages * p.ms + 1500 : b.secs * 1000;
+    return Math.max(8000, Math.min(150000, ms));
+  }
+  function schedule(frame, b) {
+    clearTimeout(dwellTimer);
+    var left = shownAt + dwellMs(frame, b) - Date.now();
+    dwellTimer = setTimeout(advance, Math.max(3000, left));
+  }
+  window.addEventListener("message", function (e) {
+    var d = e.data;
+    if (!d || d.pvhsn !== "pages") return;
+    for (var i = 0; i < 2; i++) {
+      if (frames[i].contentWindow === e.source) {
+        frames[i].pvPages = { pages: Math.max(1, Number(d.pages) || 1), ms: Math.max(5000, Number(d.ms) || 20000) };
+        // already on screen (data arrived late or the page count changed): re-time it
+        if (i === cur && shownAt) schedule(frames[i], lineup[step % lineup.length] || { secs: 20 });
+      }
+    }
+  });
   function advance() {
     step++;
     if (step >= lineup.length) { rebuild(); return; }   // new loop: re-check what's live
