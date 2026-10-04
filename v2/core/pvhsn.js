@@ -123,6 +123,13 @@
      The timer only starts on the first animation frame, which browsers do not
      run for a hidden page. Coming back into view also restarts at page 1. */
   PV.pager = function (count, ms, render) {
+    // ?page=N (set by the Director) = N seconds of reading time per page, whatever the board's default
+    var perPage = Number(PV.qs("page"));
+    if (perPage > 0) ms = perPage * 1000;
+    // tell the Director how many pages this board has right now, so it stays up long enough for all of them
+    if (PV.directed && window.parent !== window) {
+      try { window.parent.postMessage({ pvhsn: "pages", pages: count, ms: ms }, "*"); } catch (e) {}
+    }
     var idx = 0, timer = null, el = document.getElementById("pager");
     document.documentElement.style.setProperty("--page-ms", ms + "ms");
     function dots() {
