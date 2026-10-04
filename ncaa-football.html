@@ -451,6 +451,9 @@ html,body{
 const DATA_URL =
   "https://pv-house-sports.gian-ganziano.workers.dev/ncaaf";
 
+const ESPN_URL =
+  "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard";
+
 const NEWS_URL =
   "https://site.api.espn.com/apis/site/v2/sports/football/college-football/news?limit=10";
 
@@ -1108,13 +1111,14 @@ async function loadGames(){
 
   try{
 
-    const response =
-      await fetch(
-        DATA_URL,
-        {
-          cache:"no-store"
-        }
-      );
+    const date = new Date().toLocaleDateString("en-CA", {
+      timeZone:"America/Los_Angeles"
+    }).replace(/-/g, "");
+
+    const response = await fetch(
+      `${ESPN_URL}?limit=500&dates=${date}`,
+      { cache:"no-store" }
+    );
 
 
     if(!response.ok){
@@ -1126,8 +1130,26 @@ async function loadGames(){
     }
 
 
-    const games =
-      await response.json();
+    const payload = await response.json();
+    const games = Array.isArray(payload.events)
+      ? payload.events.map(event => {
+          const competition = event.competitions?.[0] || {};
+          const competitors = competition.competitors || [];
+          const away = competitors.find(team => team.homeAway === "away") || competitors[0] || {};
+          const home = competitors.find(team => team.homeAway === "home") || competitors[1] || {};
+          const status = competition.status?.type || event.status?.type || {};
+          return {
+            away_team: away.team?.displayName || away.team?.shortDisplayName || "Away Team",
+            home_team: home.team?.displayName || home.team?.shortDisplayName || "Home Team",
+            commence_time: event.date,
+            completed: Boolean(status.completed || status.state === "post"),
+            scores: competitors
+              .filter(team => team.score !== undefined && team.score !== null)
+              .map(team => ({ name: team.team?.displayName, score: team.score })),
+            bookmakers: []
+          };
+        })
+      : [];
 
 
     if(
