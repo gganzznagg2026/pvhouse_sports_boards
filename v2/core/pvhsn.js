@@ -177,7 +177,8 @@
     }
     if (league === "mlb") return [REPO + "pvhsn-assets/mlb/id/" + key + ".svg", "https://www.mlbstatic.com/team-logos/team-cap-on-dark/" + key + ".svg", PV.WORKER + "/logo/mlb/" + key];
     if (league === "ncaa") return [REPO + "pvhsn-assets/ncaa/id/" + key + ".webp", "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/" + key + ".png", PV.WORKER + "/logo/ncaa/" + key];
-    if (league === "nba" || league === "nhl") return ["https://a.espncdn.com/i/teamlogos/" + league + "/500/" + lk + ".png", PV.WORKER + "/logo/" + league + "/" + lk];
+    if (league === "nhl") return [REPO + "pvhsn-assets/nhl/" + lk + ".webp", "https://a.espncdn.com/i/teamlogos/nhl/500-dark/" + lk + ".png", PV.WORKER + "/logo/nhl/" + lk];
+    if (league === "nba") return ["https://a.espncdn.com/i/teamlogos/nba/500/" + lk + ".png", PV.WORKER + "/logo/nba/" + lk];
     return [];
   };
   PV.logo = function (league, key, abbr, color, size, cls) {
