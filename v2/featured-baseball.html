@@ -44,7 +44,7 @@
   .facts{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:24px}
   .fact{background:var(--panel);border:1px solid var(--line);padding:16px 24px}
   .fact label{display:block;font-family:"BC";font-weight:700;font-size:19px;letter-spacing:3px;color:var(--faint)}
-  .fact div{font-family:"BC";font-weight:700;font-size:34px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fact div{font-family:"BC";font-weight:700;font-size:32px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -55,13 +55,31 @@
   var COLORS = { 108:"#ba0021",109:"#a71930",110:"#df4601",111:"#bd3039",112:"#0e3386",113:"#c6011f",114:"#e31937",115:"#33006f",116:"#0c2340",117:"#eb6e1f",118:"#004687",119:"#005a9c",120:"#ab0003",121:"#ff5910",133:"#003831",134:"#fdb827",135:"#ffc425",136:"#005c5c",137:"#fd5a1e",138:"#c41e3a",139:"#8fbce6",140:"#003278",141:"#134a8e",142:"#d31145",143:"#e81828",144:"#ce1141",145:"#c4ced4",146:"#00a3e0",147:"#0c2340",158:"#ffc52f" };
   var POSTSEASON = { F: 1, D: 1, L: 1, W: 1 };              // wild card, division series, LCS, World Series
   var MAX_GAMES = 4, CYCLE_MS = (Number(PV.qs("cycle")) || 40) * 1000;
-  var API = "https://statsapi.mlb.com/api/v1/schedule?sportId=1&hydrate=team,linescore,probablePitcher,venue,seriesStatus,decisions&date=";
+  var API = "https://statsapi.mlb.com/api/v1/schedule?sportId=1&hydrate=team,linescore,probablePitcher,venue,seriesStatus,decisions";
   var games = [], pager = null, shown = 0;
 
   PV.frame({ title: "FEATURED <em>BASEBALL</em>", source: "" });
 
   function get(o, path) { return path.split(".").reduce(function (a, k) { return a && a[k] != null ? a[k] : null; }, o); }
   function todayISO() { var k = PV.todayKey(); return k.slice(0, 4) + "-" + k.slice(4, 6) + "-" + k.slice(6); }
+  function plusDays(iso, n) { var d = new Date(iso + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  var upcoming = [];   // games in the next few days, used for "next game"
+  function nextGame(g) {
+    var a = get(g, "teams.away.team.id"), h = get(g, "teams.home.team.id");
+    return upcoming.filter(function (x) {
+      var xa = get(x, "teams.away.team.id"), xh = get(x, "teams.home.team.id");
+      return ((xa === a && xh === h) || (xa === h && xh === a)) && new Date(x.gameDate) > new Date(g.gameDate) && x.gamePk !== g.gamePk;
+    }).sort(function (x, y) { return new Date(x.gameDate) - new Date(y.gameDate); })[0] || null;
+  }
+  function nextText(g) {
+    var ss = g.seriesStatus || {};
+    if (POSTSEASON[g.gameType] && ss.isOver) return (get(ss, "winningTeam.name") || "SERIES") + " ADVANCE";
+    var n = nextGame(g);
+    if (!n) return null;
+    var when = get(n, "status.startTimeTBD") ? PV.fmt(new Date(n.gameDate), { weekday: "short" }).toUpperCase() + " \u2022 TIME TBD"
+      : PV.fmt(new Date(n.gameDate), { weekday: "short" }).toUpperCase() + " " + PV.timePT(n.gameDate);
+    return (POSTSEASON[n.gameType] && n.seriesGameNumber ? "GAME " + n.seriesGameNumber + " \u2022 " : "") + when + (n.ifNecessary === "Y" ? " (IF NEEDED)" : "");
+  }
   function state(g) {
     var s = g.status || {};
     if (s.abstractGameState === "Live" && s.codedGameState !== "P") return "live";
@@ -143,6 +161,7 @@
     if (st === "final") {
       var d = g.decisions || {};
       f = [["WINNING PITCHER", get(d, "winner.fullName")], ["LOSING PITCHER", get(d, "loser.fullName")], ["SAVE", get(d, "save.fullName") || "NONE"]];
+      if (nextText(g)) f.push(["NEXT GAME", nextText(g)]);
     } else if (st === "live") {
       f = [["PITCHING", get(ls, "defense.pitcher.fullName")], ["AT BAT", get(ls, "offense.batter.fullName")],
         ["COUNT", (ls.balls != null ? ls.balls + "-" + ls.strikes : "–") + (ls.outs != null ? "  •  " + ls.outs + " OUT" + (ls.outs === 1 ? "" : "S") : "")]];
@@ -150,7 +169,7 @@
       f = [["FIRST PITCH", PV.fmt(new Date(g.gameDate), { weekday: "short" }).toUpperCase() + " " + PV.timePT(g.gameDate)],
         ["BALLPARK", get(g, "venue.name")], ["SERIES", seriesLine(g)]];
     }
-    var facts = '<div class="facts">' + f.map(function (x) { return '<div class="fact"><label>' + x[0] + "</label><div>" + PV.esc(String(x[1] || "–").toUpperCase()) + "</div></div>"; }).join("") + "</div>";
+    var facts = '<div class="facts" style="grid-template-columns:repeat(' + f.length + ',1fr)">' + f.map(function (x) { return '<div class="fact"><label>' + x[0] + "</label><div>" + PV.esc(String(x[1] || "–").toUpperCase()) + "</div></div>"; }).join("") + "</div>";
 
     document.getElementById("main").innerHTML =
       '<div class="banner"><h1>' + seriesTitle(g) + '</h1><div class="sub"><b>' + PV.esc(seriesLine(g)) + "</b><span>" +
@@ -159,10 +178,15 @@
       table + facts;
   }
   function load() {
-    PV.getJSON(API + todayISO(), "mlb-schedule-" + PV.todayKey(), 12000).then(function (res) {
+    var day = todayISO();
+    PV.getJSON(API + "&startDate=" + day + "&endDate=" + plusDays(day, 5), "mlb-schedule-" + PV.todayKey(), 12000).then(function (res) {
       if (!res) { PV.message("BASEBALL LOADING", "RETRYING AUTOMATICALLY"); return; }
       var all = [];
-      (res.data.dates || []).forEach(function (d) { all = all.concat(d.games || []); });
+      upcoming = [];
+      (res.data.dates || []).forEach(function (d) {
+        if (d.date === day) all = all.concat(d.games || []);
+        else upcoming = upcoming.concat(d.games || []);
+      });
       var picked = choose(all);
       PV.updated(res);
       if (!picked.length) { PV.message("NO MLB GAMES TODAY", "CHECK BACK TOMORROW"); return; }
