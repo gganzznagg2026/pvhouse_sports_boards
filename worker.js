@@ -224,7 +224,7 @@ const LOCAL_MLB_TEAMS = {
 };
 
 const NCAA_RANKINGS_URL = "https://www.ncaa.com/rankings/football/fbs/associated-press";
-const NFL_STANDINGS_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/standings";
+const NFL_STANDINGS_URL = "https://site.api.espn.com/apis/v2/sports/football/nfl/standings";
 const NCAA_LOGO_SLUGS = {
   "Texas": "texas",
   "Georgia": "georgia",
