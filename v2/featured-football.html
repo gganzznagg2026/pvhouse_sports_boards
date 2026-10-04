@@ -80,7 +80,8 @@
       return {
         date: e.date, state: ty.state, detail: ty.shortDetail || "", net: nets.join(" / "),
         venue: [get(c, "venue.fullName"), get(c, "venue.address.city")].filter(Boolean).join(" • "),
-        note: ((c.notes || [])[0] || {}).headline || "", et: et, prime: et.hour >= 19,
+        note: ((c.notes || [])[0] || {}).headline || "", et: et,
+        prime: et.hour >= 19 && /Thursday|Sunday|Monday/.test(et.day) || (et.hour >= 19 && et.day === "Saturday" && new Date(e.date).getMonth() >= 11),
         away: side(a), home: side(h), odds: o
       };
     });
@@ -89,7 +90,8 @@
   function pick(games) {
     var today = ptDay(new Date().toISOString()), now = Date.now();
     var recent = function (g) { return g.state !== "post" || now - new Date(g.date) < 4.5 * 3600 * 1000; };
-    var la = games.filter(function (g) { return (g.away.la || g.home.la) && ptDay(g.date) === today && recent(g); })
+    var soon = function (g) { var dt = new Date(g.date) - now; return dt < 18 * 3600 * 1000; };   // kicks off within 18 hours, or already started
+    var la = games.filter(function (g) { return (g.away.la || g.home.la) && soon(g) && recent(g); })
       .sort(function (x, y) { return (x.state === "in" ? -1 : 0) - (y.state === "in" ? -1 : 0) || (x.state === "post") - (y.state === "post") || new Date(x.date) - new Date(y.date); });
     if (la.length) return la[0];
     var live = games.filter(function (g) { return g.state === "in"; });
@@ -101,6 +103,7 @@
       games.slice().sort(function (x, y) { return new Date(y.date) - new Date(x.date); })[0] || null;
   }
   function label(g) {
+    if (/wild card|divisional|championship|super bowl|playoff/i.test(g.note)) return g.note.toUpperCase();
     if (g.prime) {
       var n = { Thursday: "THURSDAY", Sunday: "SUNDAY", Monday: "MONDAY", Saturday: "SATURDAY", Friday: "FRIDAY" }[g.et.day];
       if (n) return n + " NIGHT FOOTBALL";
