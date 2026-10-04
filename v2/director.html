@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="dark">
+<style>html,body{background:#000}</style>
+<title>PVHSN • Director</title>
+<link rel="stylesheet" href="core/pvhsn.css">
+<style>
+  /* Two frames: one on screen, one loading the next board out of sight */
+  iframe{position:fixed;left:0;top:0;width:100%;height:100%;border:0;background:#000;opacity:0;transition:opacity .35s linear}
+  iframe.on{opacity:1}
+  /* ?debug=1 shows today's plan */
+  #plan{display:none;position:fixed;right:24px;top:24px;z-index:9;background:rgba(6,8,11,.94);border:1px solid var(--line2);padding:18px 22px;
+    font-family:"BC",Arial Narrow,sans-serif;color:var(--ink);min-width:520px}
+  #plan h3{font-weight:800;font-size:26px;letter-spacing:3px;color:var(--amber);margin-bottom:6px}
+  #plan .why{font-weight:600;font-size:17px;letter-spacing:1px;color:var(--dim);margin-bottom:10px;line-height:1.35}
+  #plan ol{list-style:none;counter-reset:n}
+  #plan li{display:flex;gap:12px;font-weight:700;font-size:21px;letter-spacing:1px;padding:5px 0;border-top:1px solid var(--line)}
+  #plan li:before{counter-increment:n;content:counter(n);width:26px;color:var(--faint)}
+  #plan li b{margin-left:auto;color:var(--amber);font-weight:700}
+  #plan li.now{color:var(--amber)}
+</style>
+</head>
+<body>
+<iframe id="f0" title="board"></iframe><iframe id="f1" title="board"></iframe>
+<div id="plan"></div>
+<script src="core/pvhsn.js"></script>
+<script>
+/* PVHSN Director
+   Looks at what is actually happening today and builds the lineup:
+   live sports get more time, sports with nothing today shrink or drop out,
+   and each board loads fresh (one at a time) so the 1 GB player stays light. */
+(function () {
+  var TZ = "America/Los_Angeles";
+  var DEBUG = PV.qs("debug") === "1";
+  var frames = [document.getElementById("f0"), document.getElementById("f1")], cur = 0;
+  var lineup = [], step = 0, why = [];
+
+  function ptKey(d) { var p = {}; new Intl.DateTimeFormat("en-US", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(d).forEach(function (x) { p[x.type] = x.value; }); return p.year + p.month + p.day; }
+  function ptHour() { return Number(PV.fmt(new Date(), { hour: "numeric", hour12: false })) % 24; }
+  function weekday() { return PV.fmt(new Date(), { weekday: "long" }); }
+  function iso(k) { return k.slice(0, 4) + "-" + k.slice(4, 6) + "-" + k.slice(6); }
+  function get(o, path) { return path.split(".").reduce(function (a, k) { return a && a[k] != null ? a[k] : null; }, o); }
+
+  // ---- What's happening today, per sport ----
+  function espnDay(url, key) {
+    return PV.getJSON(url, key, 10000).then(function (res) {
+      var ev = res ? (res.data.events || []) : [], today = ptKey(new Date());
+      var t = ev.filter(function (e) { return ptKey(new Date(e.date)) === today; });
+      var st = function (e) { return get(e, "competitions.0.status.type.state") || get(e, "status.type.state"); };
+      var la = function (e, lg) { return (get(e, "competitions.0.competitors") || []).some(function (c) { return PV.isLA(lg, String(lg === "ncaa" ? get(c, "team.id") : get(c, "team.abbreviation"))); }); };
+      return {
+        ok: !!res, today: t.length,
+        live: t.filter(function (e) { return st(e) === "in"; }).length,
+        upcoming: t.filter(function (e) { return st(e) === "pre"; }).length,
+        started: t.some(function (e) { return st(e) !== "pre"; }),
+        laToday: function (lg) { return t.some(function (e) { return la(e, lg); }); },
+        laLive: function (lg) { return t.some(function (e) { return st(e) === "in" && la(e, lg); }); }
+      };
+    });
+  }
+  function survey() {
+    var k = ptKey(new Date());
+    return Promise.all([
+      espnDay("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard", "dir-nfl"),
+      espnDay("https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?limit=300&groups=80&dates=" + k, "dir-ncaa-" + k),
+      espnDay("https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=" + k, "dir-nhl-" + k),
+      PV.getJSON("https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=" + iso(k), "dir-mlb-" + k, 10000)
+    ]).then(function (r) {
+      var mlbGames = [];
+      if (r[3]) (r[3].data.dates || []).forEach(function (d) { mlbGames = mlbGames.concat(d.games || []); });
+      var ms = function (g) { var s = get(g, "status.abstractGameState"); return s === "Live" ? "in" : s === "Final" ? "post" : "pre"; };
+      var mlbLA = function (g) { return PV.isLA("mlb", get(g, "teams.away.team.id")) || PV.isLA("mlb", get(g, "teams.home.team.id")); };
+      return {
+        nfl: r[0], ncaa: r[1], nhl: r[2],
+        mlb: { today: mlbGames.length, live: mlbGames.filter(function (g) { return ms(g) === "in"; }).length,
+          post: mlbGames.some(function (g) { return /^[FDLW]$/.test(g.gameType); }),
+          laToday: mlbGames.some(mlbLA), laLive: mlbGames.some(function (g) { return ms(g) === "in" && mlbLA(g); }) }
+      };
+    });
+  }
+
+  // ---- Build today's lineup (seconds on screen) ----
+  function plan(s) {
+    var L = [], note = [];
+    // rank: 3 = live now, 2 = games today, 1 = nothing today (background info)
+    var add = function (name, url, secs, weight, rank) { L.push({ name: name, url: url, secs: secs, weight: weight || 1, rank: rank || 1 }); };
+    var flip = Math.floor(Date.now() / 600000) % 2;   // alternates every 10 minutes
+    var nfl = s.nfl, ncaa = s.ncaa, nhl = s.nhl, mlb = s.mlb;
+
+    // NFL
+    if (nfl.today) {
+      var nflBig = nfl.live || nfl.laLive("nfl") ? 3 : 2;
+      var nflRank = nfl.live ? 3 : 2;
+      add("Featured Football", "featured-football.html", 20, nflBig, nflRank);
+      add(nfl.started && nfl.today >= 3 ? "NFL Scoreboard" : "NFL Lines", "nfl.html?cycle=36", 38, nflBig, nflRank);
+      note.push("NFL: " + nfl.today + " game" + (nfl.today > 1 ? "s" : "") + " today" + (nfl.live ? ", " + nfl.live + " live" : ""));
+    } else {
+      add("NFL Lines", "nfl.html?cycle=36", 38, 1, 1);
+      add("Featured Football (next game)", "featured-football.html", 20, 1, 1);
+      add(flip ? "NFL Standings NFC" : "NFL Standings AFC", "nfl-standings.html?conf=" + (flip ? "NFC" : "AFC"), 15, 1, 1);
+      note.push("NFL: no games today, lines + one standings board");
+    }
+    // College football
+    if (ncaa.today >= 10) {
+      add("NCAA Scoreboard", "ncaa-football.html?cycle=72", 74, ncaa.live ? 2 : 1, ncaa.live ? 3 : 2);
+      note.push("College: " + ncaa.today + " games today");
+    } else if (ncaa.today > 0) {
+      add("NCAA Scoreboard", "ncaa-football.html?cycle=24", 26, 1, ncaa.live ? 3 : 2);
+      note.push("College: " + ncaa.today + " games today");
+    } else note.push("College: no games today, AP Top 25 only");
+    add("NCAA AP Top 25", "ncaa-top25.html", 20, 1, ncaa.today ? 2 : 1);
+    // Baseball
+    if (mlb.today) {
+      var bbSecs = Math.min(60, Math.max(20, mlb.today * 10));
+      add("Featured Baseball", "featured-baseball.html?cycle=" + bbSecs, bbSecs + 2, mlb.live || mlb.laLive || mlb.post ? 2 : 1, mlb.live ? 3 : 2);
+      note.push("MLB: " + mlb.today + " game" + (mlb.today > 1 ? "s" : "") + " today" + (mlb.post ? " (postseason)" : ""));
+    } else note.push("MLB: no games today");
+    // Hockey
+    if (nhl.today) {
+      add("NHL Scores & Lines", "nhl.html?cycle=36", 38, nhl.live || nhl.laLive("nhl") ? 2 : 1, nhl.live ? 3 : 2);
+      add("NHL Standings West", "nhl-standings.html?conf=WEST", 15, 1, 2);
+      add("NHL Standings East", "nhl-standings.html?conf=EAST", 15, 1, 2);
+      note.push("NHL: " + nhl.today + " game" + (nhl.today > 1 ? "s" : "") + " today");
+    } else {
+      add(flip ? "NHL Standings East" : "NHL Standings West", "nhl-standings.html?conf=" + (flip ? "EAST" : "WEST"), 15, 1, 1);
+      note.push("NHL: no games today, one standings board");
+    }
+    // House
+    add("Events & Specials", "events.html", 15, 1, 2);
+
+    // Order: whatever is live first, then the rest; heavier weights appear twice per loop
+    // live first, then today's sports, then background; within a level keep the sport's own order
+    L.forEach(function (b, i) { b.i = i; });
+    L.sort(function (a, b) { return (b.rank - a.rank) || (b.weight - a.weight) || (a.i - b.i); });
+    var loop = [], second = [];
+    L.forEach(function (b) { loop.push(b); if (b.weight >= 2) second.push(b); });
+    // Spread repeats into the back half of the loop so the same board never shows twice in a row
+    var mid = Math.ceil(loop.length / 2);
+    var out = loop.slice(0, mid);
+    second.forEach(function (b, i) { out.push(loop[mid + i] || null); out.push(b); });
+    out = out.concat(loop.slice(mid + second.length)).filter(Boolean);
+    why = note;
+    return out;
+  }
+
+  // ---- Playback: preload the next board hidden, swap, tell it it's on ----
+  function src(b) { return b.url + (b.url.indexOf("?") >= 0 ? "&" : "?") + "director=1&t=" + Date.now(); }
+  function showPlan() {
+    if (!DEBUG) return;
+    var el = document.getElementById("plan");
+    el.style.display = "block";
+    var total = lineup.reduce(function (a, b) { return a + b.secs; }, 0);
+    el.innerHTML = "<h3>TODAY'S LINEUP • " + Math.round(total / 6) / 10 + " MIN LOOP</h3><div class=\"why\">" + why.map(PV.esc).join("<br>") + "</div><ol>" +
+      lineup.map(function (b, i) { return '<li class="' + (i === step ? "now" : "") + '">' + PV.esc(b.name) + "<b>" + b.secs + "s</b></li>"; }).join("") + "</ol>";
+  }
+  function next() {
+    if (!lineup.length) return;
+    var b = lineup[step % lineup.length];
+    var incoming = frames[1 - cur], outgoing = frames[cur];
+    incoming.onload = null;
+    incoming.src = src(b);
+    // give the new board up to 3 seconds to load before it fades in
+    var swapped = false;
+    var swap = function () {
+      if (swapped) return; swapped = true;
+      incoming.className = "on"; outgoing.className = "";
+      try { incoming.contentWindow.postMessage("pvhsn-show", "*"); } catch (e) {}
+      setTimeout(function () { outgoing.src = "about:blank"; }, 600);   // free the old board's memory
+      cur = 1 - cur;
+      showPlan();
+      setTimeout(advance, b.secs * 1000);
+    };
+    incoming.onload = function () { setTimeout(swap, 400); };
+    setTimeout(swap, 3000);
+  }
+  function advance() {
+    step++;
+    if (step >= lineup.length) { rebuild(); return; }   // new loop: re-check what's live
+    next();
+  }
+  function rebuild() {
+    survey().then(function (s) { lineup = plan(s); }).catch(function () {
+      if (!lineup.length) lineup = [{ name: "Events & Specials", url: "events.html", secs: 15 }];
+    }).then(function () { step = 0; next(); });
+  }
+  rebuild();
+  // Reload the Director itself every 30 minutes as a safety net for the 1 GB player
+  setTimeout(function () { location.reload(); }, 30 * 60 * 1000);
+})();
+</script>
+</body>
+</html>
