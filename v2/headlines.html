@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="dark">
+<style>html,body{background:#000}</style>
+<title>PVHSN • Sports Wire</title>
+<link rel="stylesheet" href="core/pvhsn.css">
+<style>
+  .grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:28px;height:100%}
+  .st{background:var(--panel);border:1px solid var(--line);display:flex;overflow:hidden;position:relative}
+  .st.la{border-color:rgba(255,182,39,.5)}
+  .st .ph{width:340px;flex:none;background:#0a0d12 center/cover no-repeat;position:relative}
+  .st .ph .lg{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;
+    font-family:"BC";font-weight:800;font-size:64px;letter-spacing:4px;color:rgba(255,255,255,.08)}
+  .st .tx{flex:1;min-width:0;padding:28px 32px;display:flex;flex-direction:column}
+  .st .meta{display:flex;align-items:center;gap:12px;font-family:"BC";font-weight:700;font-size:20px;letter-spacing:3px;color:var(--faint)}
+  .st .tag{color:#000;background:var(--amber);padding:4px 10px;line-height:1;font-weight:800}
+  .st .tag.lat{background:var(--ink)}
+  .st h2{font-family:"BC";font-weight:800;font-size:40px;line-height:1.08;margin-top:16px;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .st p{font-size:22px;line-height:1.42;color:var(--dim);margin-top:14px;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+</style>
+</head>
+<body>
+<div id="stage"><div class="body"><div class="grid" id="grid"></div></div></div>
+<script src="core/pvhsn.js"></script>
+<script>
+(function () {
+  var FEEDS = [
+    ["NFL", "football/nfl"], ["MLB", "baseball/mlb"], ["COLLEGE FB", "football/college-football"],
+    ["NBA", "basketball/nba"], ["NHL", "hockey/nhl"], ["MLS", "soccer/usa.1"]
+  ];
+  var PER_PAGE = 4, MAX_PAGES = 3, CYCLE = Number(PV.qs("cycle")) || 20;
+  // Los Angeles stories go first
+  var LA_RE = /\b(Rams|Chargers|Dodgers|Angels|Lakers|Clippers|LA Kings|Los Angeles Kings|Ducks|USC|Trojans|UCLA|Galaxy|LAFC|Sparks)\b/;
+  // Not for the bar TV: fantasy advice, video clips, auto previews, evergreen schedule pages, gossip
+  var SKIP_RE = /fantasy|inactives:|best bets|parlay|props\b|how to watch|schedule, |bracket|propos|girlfriend|boyfriend|wedding|engaged|divorce/i;
+  PV.frame({ title: "SPORTS <em>WIRE</em>", source: "SOURCE: ESPN" });
+
+  function img(a) {
+    var u = ((a.images || [])[0] || {}).url || "";
+    // ESPN photos come large; ask ESPN's resizer for a small copy so the player stays light
+    var m = /^https:\/\/a\.espncdn\.com(\/photo\/.+\.jpg)$/.exec(u);
+    if (m) return "https://a.espncdn.com/combiner/i?img=" + m[1] + "&w=480&h=480&scale=crop&cquality=60";
+    return /^https:\/\/[as]\.espncdn\.com\//.test(u) ? u : "";
+  }
+  function ago(iso) {
+    var m = Math.max(0, Math.round((Date.now() - new Date(iso)) / 60000));
+    if (m < 60) return m + "M AGO";
+    var h = Math.round(m / 60);
+    return h < 24 ? h + "H AGO" : PV.fmt(new Date(iso), { weekday: "short" }).toUpperCase();
+  }
+  function pickStories(lists) {
+    var seen = {}, la = [], pools = [];
+    lists.forEach(function (l) {
+      var keep = (l.items || []).filter(function (a) {
+        var key = String(a.headline || "").toLowerCase();
+        if (!a.headline || seen[key]) return false;
+        if (a.type === "Media" || a.type === "Preview" || a.premium) return false;
+        if (SKIP_RE.test(a.headline) || SKIP_RE.test(a.description || "")) return false;
+        if (Date.now() - new Date(a.published) > 36 * 3600 * 1000) return false;
+        seen[key] = 1;
+        return true;
+      }).map(function (a) {
+        // LA tag only when the headline itself is about an LA team (an NHL "Kings" headline counts)
+        return { a: a, lg: l.lg, la: LA_RE.test(a.headline) || (l.lg === "NHL" && /\bKings\b/.test(a.headline)) };
+      });
+      keep.sort(function (x, y) { return new Date(y.a.published) - new Date(x.a.published); });
+      la = la.concat(keep.filter(function (s) { return s.la; }));
+      pools.push(keep.filter(function (s) { return !s.la; }));
+    });
+    la.sort(function (x, y) { return new Date(y.a.published) - new Date(x.a.published); });
+    var out = la.slice(0, PER_PAGE), max = PER_PAGE * MAX_PAGES;
+    // then take turns across the leagues, newest first, so it's not all football
+    pools.sort(function (x, y) { return (y[0] ? new Date(y[0].a.published) : 0) - (x[0] ? new Date(x[0].a.published) : 0); });
+    for (var round = 0; out.length < max && round < 15; round++)
+      pools.forEach(function (p) { if (p[round] && out.length < max) out.push(p[round]); });
+    return out;
+  }
+  function card(s) {
+    var a = s.a, u = img(a);
+    return '<div class="st' + (s.la ? " la" : "") + '"><div class="ph"' + (u ? ' style="background-image:url(\'' + u + '\')"' : "") + ">" +
+      (u ? "" : '<div class="lg">' + PV.esc(s.lg) + "</div>") + "</div>" +
+      '<div class="tx"><div class="meta"><span class="tag">' + PV.esc(s.lg) + "</span>" + (s.la ? '<span class="tag lat">LOS ANGELES</span>' : "") +
+      "<span>" + ago(a.published) + "</span></div><h2>" + PV.esc(a.headline) + "</h2><p>" + PV.esc(String(a.description || "").replace(/^\s*[\u2014\u2013-]+\s*/, "")) + "</p></div></div>";
+  }
+  var pager = null;
+  function load() {
+    Promise.all(FEEDS.map(function (f) {
+      return PV.getJSON("https://site.api.espn.com/apis/site/v2/sports/" + f[1] + "/news?limit=15", "news-" + f[0], 10000)
+        .then(function (res) { return { lg: f[0], res: res, items: res ? res.data.articles : [] }; });
+    })).then(function (lists) {
+      var got = lists.filter(function (l) { return l.res; });
+      if (!got.length) { PV.message("HEADLINES LOADING", "RETRYING AUTOMATICALLY"); return; }
+      var stories = pickStories(lists);
+      if (!stories.length) { PV.message("NO NEW HEADLINES", "CHECK BACK SOON"); return; }
+      var pages = Math.min(MAX_PAGES, Math.ceil(stories.length / PER_PAGE));
+      if (pager) pager.stop();
+      if (!document.getElementById("grid")) document.querySelector(".body").innerHTML = '<div class="grid" id="grid"></div>';
+      pager = PV.pager(pages, CYCLE * 1000, function (i) {
+        document.getElementById("grid").innerHTML = stories.slice(i * PER_PAGE, i * PER_PAGE + PER_PAGE).map(card).join("");
+      });
+      PV.updated(got[0].res);
+    });
+  }
+  load();
+  setInterval(load, 10 * 60 * 1000);
+})();
+</script>
+</body>
+</html>

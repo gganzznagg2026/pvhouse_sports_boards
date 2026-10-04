@@ -143,6 +143,12 @@
       add(flip ? "NHL Standings East" : "NHL Standings West", "nhl-standings.html?conf=" + (flip ? "EAST" : "WEST"), 15, 1, 1);
       note.push("NHL: no games today, one standings board");
     }
+    // Sports Wire headlines: only when nothing is live (slow days, mornings, between games)
+    grp = "news";
+    if (!(nfl.live || ncaa.live || mlb.live || nhl.live)) {
+      add("Sports Wire (headlines)", "headlines.html?cycle=20", 62, 1, 1);
+      note.push("Headlines: nothing live right now, Sports Wire added");
+    }
     grp = "house";
     // House: Happy Hour gets a second showing from 2 to 6 PM on weekdays
     var wd = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].indexOf(weekday()) >= 0, hr = ptHour();
