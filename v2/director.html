@@ -127,7 +127,9 @@
       add(flip ? "NHL Standings East" : "NHL Standings West", "nhl-standings.html?conf=" + (flip ? "EAST" : "WEST"), 15, 1, 1);
       note.push("NHL: no games today, one standings board");
     }
-    // House
+    // House: Happy Hour gets a second showing from 2 to 6 PM on weekdays
+    var wd = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].indexOf(weekday()) >= 0, hr = ptHour();
+    add("Happy Hour", "happy-hour.html", 15, wd && hr >= 14 && hr < 18 ? 2 : 1, 2);
     add("Events & Specials", "events.html", 15, 1, 2);
 
     // Order: whatever is live first, then the rest; heavier weights appear twice per loop

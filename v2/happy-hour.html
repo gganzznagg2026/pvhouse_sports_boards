@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="dark">
+<style>html,body{background:#000}</style>
+<title>PVHSN • Happy Hour</title>
+<link rel="stylesheet" href="core/pvhsn.css">
+<style>
+  /* Faint yard lines across the whole board */
+  #stage:before{content:"";position:absolute;left:0;right:0;top:112px;bottom:64px;pointer-events:none;
+    background:repeating-linear-gradient(90deg,rgba(255,255,255,.028) 0 2px,transparent 2px 192px)}
+
+  /* ---- Top: title / game clock / price ---- */
+  .hero{display:grid;grid-template-columns:520px 1fr 470px;gap:28px;height:250px}
+  .hero>div{min-height:0;overflow:hidden}
+  .ttl{display:flex;flex-direction:column;justify-content:center;border-left:6px solid var(--amber);padding-left:34px}
+  .ttl .kick{font-family:"BC";font-weight:700;font-size:26px;letter-spacing:6px;color:var(--amber)}
+  .ttl h1{font-family:"BC";font-weight:800;font-size:132px;line-height:.92;letter-spacing:1px;margin-top:6px;white-space:nowrap}
+  .ttl .days{font-family:"BC";font-weight:700;font-size:30px;letter-spacing:5px;color:var(--ink);margin-top:8px}
+  .ttl h1 em{font-style:normal;color:var(--amber)}
+
+  .clockbox{background:#020304;border:2px solid #222a33;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .clockbox:before,.clockbox:after{content:"";position:absolute;top:14px;width:10px;height:10px;border-radius:50%;background:#222a33}
+  .clockbox:before{left:14px}.clockbox:after{right:14px}
+  .clockbox .lbl{font-family:"BC";font-weight:700;font-size:26px;letter-spacing:6px;color:var(--dim)}
+  .clockbox .big{font-family:"BC";font-weight:800;font-size:112px;line-height:1;letter-spacing:4px;color:var(--amber);margin-top:4px}
+  .clockbox .sub{font-family:"BC";font-weight:700;font-size:24px;letter-spacing:4px;color:var(--ink);margin-top:6px}
+  .clockbox.live{border-color:rgba(255,90,79,.55)}
+  .clockbox.live .big{color:var(--ink)}
+  .clockbox.live .lbl{color:var(--red)}
+  .clockbox .bar{position:absolute;left:0;right:0;bottom:0;height:8px;background:rgba(255,255,255,.06)}
+  .clockbox .bar i{display:block;height:100%;background:var(--red);width:0}
+  .clockbox .pill{position:absolute;top:18px;right:40px;font-size:22px}
+
+  .price{background:linear-gradient(135deg,rgba(255,182,39,.2),rgba(255,182,39,.04));border:1px solid rgba(255,182,39,.45);
+    display:flex;flex-direction:column;justify-content:center;padding:0 40px}
+  .price .lbl{font-family:"BC";font-weight:700;font-size:24px;letter-spacing:6px;color:var(--amber)}
+  .price .amt{font-family:"BC";font-weight:800;font-size:128px;line-height:.95;letter-spacing:1px}
+  .price .amt sup{font-size:58px;vertical-align:top;line-height:1.4;margin-right:4px;color:var(--amber)}
+  .price .when{font-family:"BC";font-weight:700;font-size:26px;letter-spacing:4px;color:var(--dim);margin-top:4px}
+
+  /* ---- Bottom: lineup + drink schedule ---- */
+  .lower{display:grid;grid-template-columns:1fr 700px;gap:28px;margin-top:28px;height:570px}
+  .card{background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column}
+  .card h3{height:62px;flex:none;display:flex;align-items:center;padding:0 30px;font-family:"BC";font-weight:800;font-size:28px;letter-spacing:5px;
+    color:var(--amber);border-bottom:1px solid var(--line2)}
+  .card h3 span{margin-left:auto;color:var(--faint);font-weight:700;font-size:22px;letter-spacing:4px}
+
+  .roster{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,1fr)}
+  .pl{display:flex;align-items:center;gap:20px;padding:0 26px;border-top:1px solid var(--line)}
+  .pl:nth-child(-n+2){border-top:0}
+  .pl:nth-child(odd){border-right:1px solid var(--line)}
+  .pl .no{width:76px;flex:none;font-family:"BC";font-weight:800;font-size:68px;line-height:1;color:transparent;
+    -webkit-text-stroke:2px var(--amber);text-align:center}
+  .pl .nm{font-family:"BC";font-weight:800;font-size:40px;line-height:1;letter-spacing:.5px;white-space:nowrap}
+  .pl .ps{font-family:"BC";font-weight:700;font-size:20px;letter-spacing:4px;color:var(--faint);margin-top:6px}
+
+  .sched{flex:1;display:flex;flex-direction:column}
+  .dy{flex:1;display:flex;align-items:center;padding:0 30px;border-top:1px solid var(--line);gap:24px}
+  .dy:first-child{border-top:0}
+  .dy .d{width:74px;font-family:"BC";font-weight:800;font-size:30px;letter-spacing:3px;color:var(--faint)}
+  .dy .w{font-family:"BC";font-weight:800;font-size:34px;line-height:1;white-space:nowrap}
+  .dy .p{margin-left:auto;font-family:"BC";font-weight:800;font-size:36px;color:var(--ink)}
+  .dy.today{background:linear-gradient(90deg,rgba(255,182,39,.2),rgba(255,182,39,.03));box-shadow:inset 6px 0 0 var(--amber)}
+  .dy.today .d{color:var(--amber)}
+  .dy.today .p{color:var(--amber)}
+  .dy .tg{font-size:18px;margin-left:12px;vertical-align:middle}
+
+  .mvp{flex:none;height:132px;display:flex;align-items:center;gap:26px;padding:0 30px;border-top:1px solid rgba(255,182,39,.45);
+    background:linear-gradient(90deg,rgba(255,182,39,.16),rgba(255,182,39,.02))}
+  .mvp .tag{font-family:"BC";font-weight:800;font-size:22px;letter-spacing:4px;color:#000;background:var(--amber);padding:6px 12px;line-height:1}
+  .mvp .t1{font-family:"BC";font-weight:700;font-size:20px;letter-spacing:3px;color:var(--amber);white-space:nowrap}
+  .mvp .t2{font-family:"BC";font-weight:800;font-size:48px;line-height:1.05;white-space:nowrap}
+  .mvp .p{margin-left:auto;flex:none;font-family:"BC";font-weight:800;font-size:60px;color:var(--amber)}
+</style>
+</head>
+<body>
+<div id="stage"><div class="body">
+  <div class="hero">
+    <div class="ttl"><div class="kick">GAME TIME</div><h1 class="num">3<em>&ndash;</em>6 PM</h1><div class="days">MONDAY &ndash; FRIDAY</div></div>
+    <div class="clockbox" id="clk">
+      <span class="pill live" id="livepill" style="display:none">ON NOW</span>
+      <div class="lbl" id="clbl">KICKOFF IN</div>
+      <div class="big num" id="cbig">0:00:00</div>
+      <div class="sub" id="csub">TODAY AT 3:00 PM</div>
+      <div class="bar"><i id="cbar"></i></div>
+    </div>
+    <div class="price"><div class="lbl">EVERY BITE</div><div class="amt num"><sup>$</sup>12.95</div><div class="when">EACH &bull; DURING HAPPY HOUR</div></div>
+  </div>
+  <div class="lower">
+    <div class="card"><h3>THE STARTING LINEUP<span>HAPPY HOUR BITES</span></h3><div class="roster" id="roster"></div></div>
+    <div class="card"><h3>DRINK SPECIALS<span>ALL DAY</span></h3>
+      <div class="sched" id="sched"></div>
+      <div class="mvp"><div class="tag">MVP</div><div><div class="t1">EVERY DAY &bull; BY THE GLASS</div><div class="t2">VEUVE CLICQUOT</div></div><div class="p num">$16.95</div></div>
+    </div>
+  </div>
+</div></div>
+<script src="core/pvhsn.js"></script>
+<script>
+(function () {
+  var BITES = [
+    ["NACHOS", "STARTER"], ["CHICKEN WINGS", "STARTER"], ["CHINESE CHICKEN SALAD", "GREENS"], ["BUFFALO CAULIFLOWER", "VEGGIE"],
+    ["CHEESEBURGER SLIDERS", "HANDHELD"], ["CHICKEN TENDERS", "CLASSIC"], ["PEPPERONI PIZZA", "SHAREABLE"], ["VEGGIE RICE BOWL", "VEGGIE"]
+  ];
+  var DRINKS = [
+    ["MON", "MONDAY", "ALL DRAFTS", "20% OFF"],
+    ["TUE", "TUESDAY", "TITO'S VODKA DRINKS", "$10.95"],
+    ["WED", "WEDNESDAY", "ALL WINES", "20% OFF"],
+    ["THU", "THURSDAY", "ALL WELL DRINKS", "$9.95"],
+    ["FRI", "FRIDAY", "ESPRESSO MARTINIS", "$11.95"]
+  ];
+  var START = 15 * 3600, END = 18 * 3600;   // 3 PM - 6 PM Pacific
+  PV.frame({ title: "HAPPY <em>HOUR</em>" });
+
+  document.getElementById("roster").innerHTML = BITES.map(function (b, i) {
+    return '<div class="pl"><div class="no num">' + (i < 9 ? "0" : "") + (i + 1) + '</div><div><div class="nm">' + PV.esc(b[0]) +
+      '</div><div class="ps">' + b[1] + "</div></div></div>";
+  }).join("");
+
+  function nowPT() {
+    var n = new Date();
+    var day = PV.fmt(n, { weekday: "long" }).toUpperCase();
+    var p = {};
+    new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", hour: "numeric", minute: "numeric", second: "numeric", hour12: false })
+      .formatToParts(n).forEach(function (x) { p[x.type] = Number(x.value); });
+    return { day: day, secs: (p.hour % 24) * 3600 + p.minute * 60 + p.second };
+  }
+  function hms(s) {
+    var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
+    return h + ":" + (m < 10 ? "0" : "") + m + ":" + (x < 10 ? "0" : "") + x;
+  }
+  var lastDay = "";
+  function drinks(day) {
+    document.getElementById("sched").innerHTML = DRINKS.map(function (d) {
+      var t = d[1] === day;
+      return '<div class="dy' + (t ? " today" : "") + '"><div class="d">' + d[0] + '</div><div class="w">' + PV.esc(d[2]) +
+        (t ? '<span class="pill next tg">TODAY</span>' : "") + '</div><div class="p num">' + d[3] + "</div></div>";
+    }).join("");
+  }
+  function tick() {
+    var t = nowPT(), weekday = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"].indexOf(t.day) >= 0;
+    if (t.day !== lastDay) { drinks(t.day); lastDay = t.day; }
+    var box = document.getElementById("clk"), lbl = document.getElementById("clbl"), big = document.getElementById("cbig"),
+        sub = document.getElementById("csub"), bar = document.getElementById("cbar"), pill = document.getElementById("livepill");
+    var live = weekday && t.secs >= START && t.secs < END;
+    box.className = "clockbox" + (live ? " live" : "");
+    pill.style.display = live ? "" : "none";
+    if (live) {
+      lbl.textContent = "TIME REMAINING";
+      big.textContent = hms(END - t.secs);
+      sub.textContent = "LAST CALL FOR BITES AT 6:00 PM";
+      bar.style.width = ((t.secs - START) / (END - START) * 100).toFixed(2) + "%";
+      return;
+    }
+    bar.style.width = "0";
+    if (weekday && t.secs < START) {
+      lbl.textContent = "KICKOFF IN";
+      big.textContent = hms(START - t.secs);
+      sub.textContent = "TODAY AT 3:00 PM";
+      return;
+    }
+    // After 6 PM on a weekday, or the weekend
+    lbl.textContent = weekday ? "FINAL • NEXT GAME" : "NEXT GAME";
+    big.textContent = t.day === "FRIDAY" || !weekday ? "MONDAY" : "TOMORROW";
+    sub.textContent = "3:00 – 6:00 PM • MONDAY – FRIDAY";
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
+</body>
+</html>
