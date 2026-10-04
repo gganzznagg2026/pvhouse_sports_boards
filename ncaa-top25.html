@@ -518,8 +518,6 @@
         const data = await response.json();
         if (!Array.isArray(data.rankings) || data.rankings.length !== 25) throw new Error("Incomplete rankings response");
         renderRankings(data.rankings);
-        const through = data.through || "CURRENT AP POLL";
-        document.querySelector(".week").textContent = through.replace(/^Through Games\s*/i, "").toUpperCase();
       } catch (error) {
         renderRankings(fallbackRankings);
       }
