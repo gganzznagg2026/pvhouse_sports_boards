@@ -32,8 +32,8 @@ body{font-family:"B",Arial,sans-serif;color:var(--ink);-webkit-font-smoothing:an
 .board-title em{font-style:normal;color:var(--accent)}
 .hd .pvlogo{position:absolute;left:50%;top:17px;height:78px;transform:translateX(-50%);filter:invert(1)}
 .hd-right{margin-left:auto;text-align:right}
-.hd .upd{font-family:"BC";font-weight:600;font-size:16px;letter-spacing:2px;color:var(--faint);margin-top:5px}
-.hd .upd.stale{color:var(--amber)}
+.hd .upd{display:none;font-family:"BC";font-weight:600;font-size:16px;letter-spacing:2px;color:var(--faint);margin-top:5px}
+.hd .upd.stale{display:block;color:var(--amber)}
 .clock{font-family:"BC";font-weight:700;font-size:44px;letter-spacing:1px;line-height:1}
 .date{font-family:"BC";font-weight:600;font-size:20px;letter-spacing:3px;color:var(--dim);margin-top:6px}
 
