@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="dark">
+<style>html,body{background:#000}</style>
+<title>PVHSN • Weekend Brunch</title>
+<link rel="stylesheet" href="core/pvhsn.css">
+<style>
+  #stage:before{content:"";position:absolute;left:0;right:0;top:112px;bottom:64px;pointer-events:none;
+    background:repeating-linear-gradient(90deg,rgba(255,255,255,.028) 0 2px,transparent 2px 192px)}
+
+  /* ---- Top: kickoff / status / mimosa ---- */
+  .hero{display:grid;grid-template-columns:520px 1fr 470px;gap:28px;height:250px}
+  .hero>div{min-height:0;overflow:hidden}
+  .ttl{display:flex;flex-direction:column;justify-content:center;border-left:6px solid var(--amber);padding-left:34px}
+  .ttl .kick{font-family:"BC";font-weight:700;font-size:26px;letter-spacing:6px;color:var(--amber)}
+  .ttl h1{font-family:"BC";font-weight:800;font-size:132px;line-height:.92;letter-spacing:1px;margin-top:6px;white-space:nowrap}
+  .ttl h1 em{font-style:normal;color:var(--amber);font-size:72px;margin-left:6px}
+  .ttl .days{font-family:"BC";font-weight:700;font-size:30px;letter-spacing:5px;color:var(--ink);margin-top:8px}
+
+  .clockbox{background:#020304;border:2px solid #222a33;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .clockbox:before,.clockbox:after{content:"";position:absolute;top:14px;width:10px;height:10px;border-radius:50%;background:#222a33}
+  .clockbox:before{left:14px}.clockbox:after{right:14px}
+  .clockbox .lbl{font-family:"BC";font-weight:700;font-size:26px;letter-spacing:6px;color:var(--dim)}
+  .clockbox .big{font-family:"BC";font-weight:800;font-size:112px;line-height:1;letter-spacing:4px;color:var(--amber);margin-top:4px}
+  .clockbox .sub{font-family:"BC";font-weight:700;font-size:24px;letter-spacing:4px;color:var(--ink);margin-top:6px}
+  .clockbox .bar{position:absolute;left:0;right:0;bottom:0;height:8px;background:transparent}
+  .clockbox.live{border-color:rgba(255,90,79,.55)}
+  .clockbox.live .big,.clockbox.live .lbl{color:var(--red)}
+  .clockbox.live .bar{background:var(--red)}
+
+  .price{background:linear-gradient(135deg,rgba(255,182,39,.2),rgba(255,182,39,.04));border:1px solid rgba(255,182,39,.45);
+    display:flex;flex-direction:column;justify-content:center;padding:0 40px}
+  .price .lbl{font-family:"BC";font-weight:700;font-size:24px;letter-spacing:6px;color:var(--amber)}
+  .price .amt{font-family:"BC";font-weight:800;font-size:128px;line-height:.95;letter-spacing:1px}
+  .price .amt sup{font-size:58px;vertical-align:top;line-height:1.4;margin-right:4px;color:var(--amber)}
+  .price .when{font-family:"BC";font-weight:700;font-size:26px;letter-spacing:4px;color:var(--dim);margin-top:4px}
+
+  /* ---- Bottom: featured plays + rest of the menu ---- */
+  .lower{display:grid;grid-template-columns:1fr 640px;gap:28px;margin-top:28px;height:570px}
+  .card{background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column}
+  .card h3{height:62px;flex:none;display:flex;align-items:center;padding:0 30px;font-family:"BC";font-weight:800;font-size:28px;letter-spacing:5px;
+    color:var(--amber);border-bottom:1px solid var(--line2)}
+  .card h3 span{margin-left:auto;color:var(--faint);font-weight:700;font-size:22px;letter-spacing:4px}
+
+  .plays{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+  .pl{padding:26px 30px;border-top:1px solid var(--line);display:flex;flex-direction:column;position:relative}
+  .pl:nth-child(-n+2){border-top:0}
+  .pl:nth-child(odd){border-right:1px solid var(--line)}
+  .pl .top{display:flex;align-items:center;gap:16px}
+  .pl .no{font-family:"BC";font-weight:800;font-size:22px;letter-spacing:4px;color:var(--faint)}
+  .pl .nm{font-family:"BC";font-weight:800;font-size:46px;line-height:1;letter-spacing:.5px;margin-top:10px;white-space:nowrap}
+  .pl .pr{margin-left:auto;font-family:"BC";font-weight:800;font-size:40px;line-height:1;color:var(--amber)}
+  .pl .ds{font-size:22px;line-height:1.4;color:var(--dim);margin-top:14px}
+
+  .menu{flex:1;display:flex;flex-direction:column}
+  .it{flex:1;display:flex;align-items:center;padding:0 30px;border-top:1px solid var(--line);gap:20px}
+  .it:first-child{border-top:0}
+  .it .n{font-family:"BC";font-weight:800;font-size:34px;line-height:1;white-space:nowrap}
+  .it .p{margin-left:auto;font-family:"BC";font-weight:800;font-size:34px;color:var(--ink)}
+  .it.drink{background:linear-gradient(90deg,rgba(255,182,39,.14),rgba(255,182,39,.02));border-top:1px solid rgba(255,182,39,.45)}
+  .it.drink .p{color:var(--amber)}
+  .it .tg{font-family:"BC";font-weight:800;font-size:18px;letter-spacing:3px;color:#000;background:var(--amber);padding:5px 9px;line-height:1}
+</style>
+</head>
+<body>
+<div id="stage"><div class="body">
+  <div class="hero">
+    <div class="ttl"><div class="kick">KICKOFF</div><h1 class="num">10<em>AM</em></h1><div class="days">SAT &amp; SUN &bull; UNTIL 1:30 PM</div></div>
+    <div class="clockbox" id="clk">
+      <div class="lbl" id="clbl">BRUNCH</div>
+      <div class="big" id="cbig">SATURDAY</div>
+      <div class="sub" id="csub">10:00 AM &ndash; 1:30 PM</div>
+      <div class="bar"></div>
+    </div>
+    <div class="price"><div class="lbl">MIMOSAS</div><div class="amt num"><sup>$</sup>5.95</div><div class="when">BRUNCH DRINK SPECIAL</div></div>
+  </div>
+  <div class="lower">
+    <div class="card"><h3>THE GAME PLAN<span>BRUNCH FAVORITES</span></h3><div class="plays" id="plays"></div></div>
+    <div class="card"><h3>ALSO ON THE BRUNCH MENU</h3><div class="menu" id="menu"></div></div>
+  </div>
+</div></div>
+<script src="core/pvhsn.js"></script>
+<script>
+(function () {
+  // Straight from the brunch menu on pvhousela.com
+  var FEATURED = [
+    ["AVOCADO TOAST", "$15.95", "Smashed avocado, lemon juice, EVOO, cayenne, cherry tomatoes, greens and balsamic glaze"],
+    ["BREAKFAST BURRITO", "$17.95", "Chorizo, scrambled eggs, tomatoes, avocado and balsamic glaze, served with tater tots"],
+    ["LEMON RICOTTA PANCAKES", "$15.95", "Three fluffy lemon ricotta pancakes with whipped lemon zest and strawberry cream"],
+    ["STEAK & EGGS", "$25.95", "Two eggs any style, 8 oz ribeye, tater tots and toast"]
+  ];
+  var MORE = [
+    ["TEX MEX BURRITO", "$17.95"], ["BREAKFAST SANDWICH", "$16.95"], ["PLAYA COMBO", "$16.95"],
+    ["LOCO MOCO", "$18.95"], ["BREAKFAST PIZZA", "$19.95"]
+  ];
+  var DRINKS = [["KETEL ONE BLOODY MARY", "$11.95"]];
+  var START = 10 * 3600, END = 13 * 3600 + 30 * 60;   // 10:00 AM - 1:30 PM Pacific, Sat & Sun
+  PV.frame({ title: "WEEKEND <em>BRUNCH</em>" });
+
+  document.getElementById("plays").innerHTML = FEATURED.map(function (f, i) {
+    return '<div class="pl"><div class="top"><div class="no">PLAY 0' + (i + 1) + '</div><div class="pr num">' + f[1] + '</div></div><div class="nm">' + PV.esc(f[0]) +
+      '</div><div class="ds">' + PV.esc(f[2]) + "</div></div>";
+  }).join("");
+  document.getElementById("menu").innerHTML = MORE.map(function (m) {
+    return '<div class="it"><div class="n">' + PV.esc(m[0]) + '</div><div class="p num">' + m[1] + "</div></div>";
+  }).join("") + DRINKS.map(function (d) {
+    return '<div class="it drink"><div class="tg">DRINK</div><div class="n">' + PV.esc(d[0]) + '</div><div class="p num">' + d[1] + "</div></div>";
+  }).join("");
+
+  function tick() {
+    var n = new Date(), day = PV.fmt(n, { weekday: "long" }).toUpperCase(), p = {};
+    new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", hour: "numeric", minute: "numeric", hour12: false })
+      .formatToParts(n).forEach(function (x) { p[x.type] = Number(x.value); });
+    var secs = (p.hour % 24) * 3600 + p.minute * 60;
+    var wknd = day === "SATURDAY" || day === "SUNDAY";
+    var live = wknd && secs >= START && secs < END;
+    var lbl = document.getElementById("clbl"), big = document.getElementById("cbig"), sub = document.getElementById("csub");
+    document.getElementById("clk").className = "clockbox" + (live ? " live" : "");
+    if (live) { lbl.textContent = "BRUNCH"; big.textContent = "SERVING NOW"; sub.textContent = "UNTIL 1:30 PM TODAY"; return; }
+    if (wknd && secs < START) { lbl.textContent = "BRUNCH"; big.textContent = "TODAY"; sub.textContent = "10:00 AM – 1:30 PM"; return; }
+    lbl.textContent = "NEXT BRUNCH";
+    big.textContent = day === "SATURDAY" ? "TOMORROW" : "SATURDAY";
+    sub.textContent = "10:00 AM – 1:30 PM • SAT & SUN";
+  }
+  tick();
+  setInterval(tick, 60 * 1000);
+})();
+</script>
+</body>
+</html>

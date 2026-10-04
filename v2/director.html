@@ -130,6 +130,11 @@
     // House: Happy Hour gets a second showing from 2 to 6 PM on weekdays
     var wd = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].indexOf(weekday()) >= 0, hr = ptHour();
     add("Happy Hour", "happy-hour.html", 15, wd && hr >= 14 && hr < 18 ? 2 : 1, 2);
+    // Weekend brunch: Saturday & Sunday until 1:30 PM, shown twice per loop while it's being served
+    if (!wd && (hr < 13 || (hr === 13 && Number(PV.fmt(new Date(), { minute: "numeric" })) < 30))) {
+      add("Weekend Brunch", "brunch.html", 15, hr >= 10 ? 2 : 1, 3);
+      note.push("Brunch: weekend, shown until 1:30 PM");
+    }
     add("Events & Specials", "events.html", 15, 1, 2);
 
     // Order: whatever is live first, then the rest; heavier weights appear twice per loop
