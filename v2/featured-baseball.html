@@ -5,39 +5,46 @@
 <title>PVHSN • Featured Baseball</title>
 <link rel="stylesheet" href="core/pvhsn.css">
 <style>
-  .status{height:56px;display:flex;align-items:center;gap:20px;font-family:"BC";font-weight:700;font-size:26px;letter-spacing:3px;color:var(--dim)}
-  .status .pill{font-size:26px;padding:6px 14px}
-  .status .venue{margin-left:auto;color:var(--faint)}
-  .hero{height:330px;display:grid;grid-template-columns:1fr 360px 1fr;align-items:center;margin-top:8px}
-  .team{display:flex;align-items:center;gap:30px;min-width:0}
+  .banner{height:84px;display:flex;align-items:center;gap:22px}
+  .banner h1{font-family:"BC";font-weight:800;font-size:60px;letter-spacing:3px;line-height:1;color:var(--amber);white-space:nowrap}
+  .banner h1 span{color:var(--ink)}
+  .banner .sub{margin-left:auto;text-align:right;font-family:"BC";line-height:1.25}
+  .banner .sub b{display:block;font-weight:800;font-size:34px;letter-spacing:2px}
+  .banner .sub span{display:block;font-weight:600;font-size:21px;letter-spacing:3px;color:var(--dim)}
+  .hero{height:300px;display:grid;grid-template-columns:1fr 380px 1fr;align-items:center;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    background:linear-gradient(90deg,var(--ac) 0,transparent 32%,transparent 68%,var(--hc) 100%)}
+  .team{display:flex;align-items:center;gap:30px;min-width:0;padding:0 40px}
   .team.home{flex-direction:row-reverse;text-align:right}
-  .badge{width:170px;height:170px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:6px}
-  .badge img{width:132px;height:132px}
+  .team .logo,.team .initials{flex:none;filter:drop-shadow(0 8px 16px rgba(0,0,0,.5))}
   .tcopy{min-width:0}
-  .city{font-family:"BC";font-weight:600;font-size:30px;letter-spacing:5px;color:var(--dim)}
-  .tname{font-family:"BC";font-weight:800;font-size:84px;line-height:.95;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .pitch{font-family:"BC";font-weight:600;font-size:24px;letter-spacing:2px;color:var(--faint);margin-top:12px}
-  .score{display:flex;align-items:center;justify-content:center;gap:22px}
-  .score b{font-family:"BC";font-weight:800;font-size:150px;line-height:1;color:var(--amber);min-width:120px;text-align:center}
-  .score b.lose{color:var(--dim)}
-  .score i{width:26px;height:6px;background:var(--line2);display:block}
-  .score .at{font-family:"BC";font-weight:700;font-size:64px;color:var(--faint)}
-  table.ls{width:100%;border-collapse:collapse;margin-top:34px;background:var(--panel);border:1px solid var(--line)}
-  .ls th{height:56px;font-family:"BC";font-weight:700;font-size:24px;letter-spacing:2px;color:var(--faint);border-bottom:1px solid var(--line2)}
-  .ls td{height:108px;text-align:center;font-family:"BC";font-weight:700;font-size:56px;font-variant-numeric:tabular-nums}
+  .city{font-family:"BC";font-weight:600;font-size:28px;letter-spacing:5px;color:var(--dim)}
+  .tname{font-family:"BC";font-weight:800;font-size:84px;line-height:.95;white-space:nowrap}
+  .sp{font-family:"BC";font-weight:700;font-size:24px;letter-spacing:2px;color:var(--amber);margin-top:8px}
+  .mid{text-align:center}
+  .score{font-family:"BC";font-weight:800;font-size:136px;line-height:1;white-space:nowrap}
+  .score b{color:var(--amber);font-weight:800} .score b.lose{color:var(--faint)}
+  .score i{font-style:normal;color:var(--faint);font-size:90px;margin:0 16px;vertical-align:18px}
+  .when{font-family:"BC";font-weight:800;font-size:56px;color:var(--blue)}
+  .state{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:6px;font-family:"BC";font-weight:700;font-size:24px;letter-spacing:2px;color:var(--dim)}
+  .state .pill{font-size:24px}
+  .diamond{position:relative;width:46px;height:40px}
+  .diamond i{position:absolute;width:15px;height:15px;transform:rotate(45deg);border:2px solid var(--faint)}
+  .diamond i.on{background:var(--amber);border-color:var(--amber)}
+  .diamond .b2{left:15px;top:2px} .diamond .b1{left:30px;top:17px} .diamond .b3{left:0;top:17px}
+  table.ls{width:100%;border-collapse:collapse;margin-top:28px;background:var(--panel);border:1px solid var(--line)}
+  .ls th{height:50px;font-family:"BC";font-weight:700;font-size:22px;letter-spacing:2px;color:var(--faint);border-bottom:1px solid var(--line2)}
+  .ls td{height:108px;text-align:center;font-family:"BC";font-weight:700;font-size:52px;font-variant-numeric:tabular-nums}
   .ls tr + tr td{border-top:1px solid var(--line)}
-  .ls td.tm{text-align:left;padding-left:28px;width:250px;font-size:46px;letter-spacing:2px}
-  .ls td.tm{white-space:nowrap}
+  .ls td.tm{text-align:left;padding-left:26px;width:240px;font-size:42px;letter-spacing:2px;white-space:nowrap}
   .ls .lsl,.ls td.tm .initials{display:inline-flex;vertical-align:middle;margin-right:18px}
-  .ls td.tm span{display:inline-block;width:10px;height:52px;margin-right:20px;vertical-align:-8px}
-  .ls .rhe{background:rgba(255,182,39,.07);color:var(--amber);width:120px}
+  .ls .rhe{background:rgba(255,182,39,.07);color:var(--amber);width:116px}
   .ls th.rhe{color:var(--amber)}
   .ls td.gap{color:var(--faint)}
   .ls .cur{background:rgba(255,255,255,.05)}
-  .facts{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:28px}
-  .fact{background:var(--panel);border:1px solid var(--line);padding:18px 24px}
-  .fact label{display:block;font-family:"BC";font-weight:700;font-size:20px;letter-spacing:3px;color:var(--faint)}
-  .fact div{font-family:"BC";font-weight:700;font-size:36px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .facts{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:24px}
+  .fact{background:var(--panel);border:1px solid var(--line);padding:16px 24px}
+  .fact label{display:block;font-family:"BC";font-weight:700;font-size:19px;letter-spacing:3px;color:var(--faint)}
+  .fact div{font-family:"BC";font-weight:700;font-size:34px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -46,89 +53,127 @@
 <script>
 (function () {
   var COLORS = { 108:"#ba0021",109:"#a71930",110:"#df4601",111:"#bd3039",112:"#0e3386",113:"#c6011f",114:"#e31937",115:"#33006f",116:"#0c2340",117:"#eb6e1f",118:"#004687",119:"#005a9c",120:"#ab0003",121:"#ff5910",133:"#003831",134:"#fdb827",135:"#ffc425",136:"#005c5c",137:"#fd5a1e",138:"#c41e3a",139:"#8fbce6",140:"#003278",141:"#134a8e",142:"#d31145",143:"#e81828",144:"#ce1141",145:"#c4ced4",146:"#00a3e0",147:"#0c2340",158:"#ffc52f" };
-  var LS_URL = "https://statsapi.mlb.com/api/v1/game/";
+  var POSTSEASON = { F: 1, D: 1, L: 1, W: 1 };              // wild card, division series, LCS, World Series
+  var MAX_GAMES = 4, CYCLE_MS = (Number(PV.qs("cycle")) || 40) * 1000;
+  var API = "https://statsapi.mlb.com/api/v1/schedule?sportId=1&hydrate=team,linescore,probablePitcher,venue,seriesStatus,decisions&date=";
+  var games = [], pager = null, shown = 0;
 
-  PV.frame({ title: "FEATURED <em>BASEBALL</em>", source: "SOURCE: MLB STATS" });
+  PV.frame({ title: "FEATURED <em>BASEBALL</em>", source: "" });
 
-  function pick(games) {
-    var isLA = function (g) { return PV.isLA("mlb", g.awayTeam.id) || PV.isLA("mlb", g.homeTeam.id); };
-    var by = function (label) { return games.filter(function (g) { return g.status.label === label; }); };
-    var live = by("LIVE"), up = by("UPCOMING"), fin = by("FINAL");
-    fin.sort(function (a, b) { return new Date(b.startTime) - new Date(a.startTime); });
-    var laFirst = function (list) { return list.filter(isLA)[0]; };
-    var recentLA = fin.filter(function (g) { return isLA(g) && Date.now() - new Date(g.startTime) < 7 * 3600 * 1000; })[0];
-    return laFirst(live) || laFirst(up) ||        // 1. Dodgers / Angels playing today, live or still to come
-      live[0] || recentLA ||                       // 2. any live game, else an LA game that just ended
-      up[0] || fin[0] || null;                     // 3. next first pitch, else latest final
+  function get(o, path) { return path.split(".").reduce(function (a, k) { return a && a[k] != null ? a[k] : null; }, o); }
+  function todayISO() { var k = PV.todayKey(); return k.slice(0, 4) + "-" + k.slice(4, 6) + "-" + k.slice(6); }
+  function state(g) {
+    var s = g.status || {};
+    if (s.abstractGameState === "Live" && s.codedGameState !== "P") return "live";
+    if (s.abstractGameState === "Final") return "final";
+    return "pre";
   }
-  function logo(t) {
-    var color = COLORS[t.id] || "#3a4452";
-    return '<div class="badge" style="background:' + color + '33;border:3px solid ' + color + '">' + PV.logo("mlb", t.id, t.abbreviation, color, 132) + "</div>";
+  function isLA(g) { return PV.isLA("mlb", get(g, "teams.away.team.id")) || PV.isLA("mlb", get(g, "teams.home.team.id")); }
+
+  // Postseason: every game today. Regular season: LA first, then live games, then what's next.
+  function choose(all) {
+    var rank = { live: 0, pre: 1, final: 2 };
+    var sorted = all.slice().sort(function (a, b) {
+      return (isLA(a) ? 0 : 1) - (isLA(b) ? 0 : 1) || rank[state(a)] - rank[state(b)] ||
+        (state(a) === "final" ? new Date(b.gameDate) - new Date(a.gameDate) : new Date(a.gameDate) - new Date(b.gameDate));
+    });
+    var post = all.some(function (g) { return POSTSEASON[g.gameType]; });
+    return post ? sorted.slice(0, 6) : sorted.slice(0, MAX_GAMES);
   }
-  function split(name, short) {
-    var parts = String(name).split(" ");
-    var nick = parts.slice(-1)[0];
+  function split(name) {
+    var parts = String(name || "").split(" "), nick = parts.slice(-1)[0];
     if (/Sox|Jays/.test(nick)) nick = parts.slice(-2).join(" ");
-    return { city: String(short || name).replace(nick, "").trim() || name, nick: nick };
+    return { city: String(name).replace(nick, "").trim(), nick: nick };
   }
-  var ALL = [];
-  function others(g) {
-    var rest = ALL.filter(function (x) { return x.gamePk !== g.gamePk; }).slice(0, 2);
-    if (!rest.length) return "ONLY GAME TODAY";
-    return rest.map(function (x) {
-      return x.status.label === "UPCOMING" ? x.awayTeam.abbreviation + " @ " + x.homeTeam.abbreviation + " " + PV.timePT(x.startTime)
-        : x.awayTeam.abbreviation + " " + x.awayStats.runs + "  " + x.homeTeam.abbreviation + " " + x.homeStats.runs + (x.status.label === "FINAL" ? " F" : "");
-    }).join("   \u2022   ");
+  function seriesTitle(g) {
+    if (!POSTSEASON[g.gameType]) return isLA(g) ? "LOS ANGELES <span>BASEBALL</span>" : "FEATURED <span>MATCHUP</span>";
+    var desc = (g.seriesDescription || get(g, "seriesStatus.description") || "POSTSEASON").toUpperCase();
+    return PV.esc(desc) + (g.seriesGameNumber ? " <span>&bull; GAME " + g.seriesGameNumber + "</span>" : "");
   }
-  function render(g, ls) {
-    var a = g.awayTeam, h = g.homeTeam, an = split(a.name), hn = split(h.name);
-    var st = g.status.label, pill;
-    if (st === "LIVE") pill = '<span class="pill live">LIVE</span><span>' + PV.esc(((g.inningState || "") + " " + (g.currentInningOrdinal || "")).toUpperCase()) + "</span>" + (g.outs != null ? "<span>" + g.outs + " OUT" + (g.outs === 1 ? "" : "S") + "</span>" : "");
-    else if (st === "FINAL") pill = '<span class="pill final">FINAL' + (g.currentInning > 9 ? " / " + g.currentInning : "") + "</span>";
-    else pill = '<span class="pill next">FIRST PITCH ' + PV.dayPT(g.startTime) + " " + PV.timePT(g.startTime) + "</span>";
-    var ar = g.awayStats.runs, hr = g.homeStats.runs;
-    var score = st === "UPCOMING" ? '<div class="score"><span class="at">AT</span></div>' :
-      '<div class="score"><b class="' + (st === "FINAL" && ar < hr ? "lose" : "") + '">' + ar + "</b><i></i><b class=\"" + (st === "FINAL" && hr < ar ? "lose" : "") + '">' + hr + "</b></div>";
-    var pp = g.probablePitchers || {};
-    var html = '<div class="status">' + pill + '<span class="venue">' + PV.esc((g.venue && g.venue.name || "").toUpperCase()) + "</span></div>" +
-      '<div class="hero">' +
-      '<div class="team away">' + logo(a) + '<div class="tcopy"><div class="city">' + PV.esc(an.city.toUpperCase()) + '</div><div class="tname">' + PV.esc(an.nick.toUpperCase()) + "</div>" + (PV.isLA("mlb", a.id) ? '<span class="la-tag" style="margin:8px 0 0">LOS ANGELES</span>' : "") +
-      '<div class="pitch">SP ' + PV.esc(pp.away && pp.away.name ? pp.away.name.toUpperCase() : "TBD") + "</div></div></div>" + score +
-      '<div class="team home">' + logo(h) + '<div class="tcopy"><div class="city">' + PV.esc(hn.city.toUpperCase()) + '</div><div class="tname">' + PV.esc(hn.nick.toUpperCase()) + "</div>" + (PV.isLA("mlb", h.id) ? '<span class="la-tag" style="margin:8px 0 0">LOS ANGELES</span>' : "") +
-      '<div class="pitch">SP ' + PV.esc(pp.home && pp.home.name ? pp.home.name.toUpperCase() : "TBD") + "</div></div></div></div>";
-
-    // Inning-by-inning line score with R / H / E
-    var inns = (ls && ls.innings) || [], n = Math.max(9, inns.length), head = "<th></th>", rowA = "", rowH = "";
-    for (var i = 1; i <= n; i++) {
-      var inn = inns[i - 1] || {}, cur = st === "LIVE" && i === g.currentInning ? " cur" : "";
-      head += '<th class="' + cur + '">' + i + "</th>";
-      var av = inn.away && inn.away.runs != null ? inn.away.runs : "", hv = inn.home && inn.home.runs != null ? inn.home.runs : (i <= inns.length && st === "FINAL" ? "X" : "");
-      rowA += '<td class="' + (av === "" ? "gap" : "") + cur + '">' + (av === "" ? "&ndash;" : av) + "</td>";
-      rowH += '<td class="' + (hv === "" ? "gap" : "") + cur + '">' + (hv === "" ? "&ndash;" : hv) + "</td>";
+  function seriesLine(g) {
+    var ss = g.seriesStatus || {};
+    if (POSTSEASON[g.gameType] && ss.result) return ss.result.toUpperCase();
+    if (POSTSEASON[g.gameType]) return "BEST OF " + (g.gamesInSeries || "");
+    return "REGULAR SEASON";
+  }
+  function teamBlock(side, g, cls) {
+    var t = get(g, "teams." + side + ".team") || {}, n = split(t.name), color = COLORS[t.id] || "#3a4452";
+    var dec = g.decisions || {}, line;
+    if (state(g) === "final") line = get(g, "teams." + side + ".isWinner") ? "W: " + (get(dec, "winner.fullName") || "") : "L: " + (get(dec, "loser.fullName") || "");
+    else line = "SP " + (get(g, "teams." + side + ".probablePitcher.fullName") || "TBD");
+    return '<div class="team ' + cls + '">' + PV.logo("mlb", t.id, t.abbreviation, color, 170) +
+      '<div class="tcopy"><div class="city">' + PV.esc(n.city.toUpperCase()) + "</div>" +
+      '<div class="tname">' + PV.esc(n.nick.toUpperCase()) + "</div>" +
+      '<div class="sp">' + PV.esc(line.toUpperCase()) + (PV.isLA("mlb", t.id) ? '<span class="la-tag">LA</span>' : "") + "</div></div></div>";
+  }
+  function render(g) {
+    var ls = g.linescore || {}, st = state(g);
+    var a = get(g, "teams.away.team") || {}, h = get(g, "teams.home.team") || {};
+    var as = get(g, "teams.away.score"), hs = get(g, "teams.home.score");
+    var mid;
+    if (st === "pre") {
+      mid = '<div class="when">' + PV.timePT(g.gameDate) + '</div><div class="state"><span class="pill next">FIRST PITCH</span></div>';
+    } else {
+      mid = '<div class="score num"><b class="' + (st === "final" && as < hs ? "lose" : "") + '">' + as + '</b><i>&ndash;</i><b class="' + (st === "final" && hs < as ? "lose" : "") + '">' + hs + "</b></div>";
+      if (st === "live") {
+        var off = ls.offense || {};
+        mid += '<div class="state"><span class="pill live">' + PV.esc(((ls.inningState || "") + " " + (ls.currentInningOrdinal || "")).toUpperCase()) + "</span>" +
+          '<span class="diamond"><i class="b2' + (off.second ? " on" : "") + '"></i><i class="b3' + (off.third ? " on" : "") + '"></i><i class="b1' + (off.first ? " on" : "") + '"></i></span>' +
+          "<span>" + (ls.outs != null ? ls.outs + " OUT" + (ls.outs === 1 ? "" : "S") : "") + "</span></div>";
+      } else {
+        mid += '<div class="state"><span class="pill final">FINAL' + (ls.currentInning > 9 ? " / " + ls.currentInning : "") + "</span></div>";
+      }
     }
-    var rhe = function (s) { return '<td class="rhe">' + (s.runs == null ? "&ndash;" : s.runs) + '</td><td class="rhe">' + (s.hits == null ? "&ndash;" : s.hits) + '</td><td class="rhe">' + (s.errors == null ? "&ndash;" : s.errors) + "</td>"; };
-    html += '<table class="ls"><tr>' + head + '<th class="rhe">R</th><th class="rhe">H</th><th class="rhe">E</th></tr>' +
-      '<tr><td class="tm">' + PV.logo("mlb", a.id, a.abbreviation, COLORS[a.id], 50, "lsl") + PV.esc(a.abbreviation) + "</td>" + rowA + rhe(g.awayStats) + "</tr>" +
-      '<tr><td class="tm">' + PV.logo("mlb", h.id, h.abbreviation, COLORS[h.id], 50, "lsl") + PV.esc(h.abbreviation) + "</td>" + rowH + rhe(g.homeStats) + "</tr></table>";
+    // Inning-by-inning line score with R / H / E
+    var inns = ls.innings || [], n = Math.max(9, inns.length), head = "<th></th>", rowA = "", rowH = "";
+    for (var i = 1; i <= n; i++) {
+      var inn = inns[i - 1] || {}, cur = st === "live" && i === ls.currentInning ? " cur" : "";
+      head += '<th class="' + cur + '">' + i + "</th>";
+      var av = get(inn, "away.runs"), hv = get(inn, "home.runs");
+      if (hv == null && st === "final" && i <= inns.length) hv = "X";
+      rowA += '<td class="' + (av == null ? "gap" : "") + cur + '">' + (av == null ? "&ndash;" : av) + "</td>";
+      rowH += '<td class="' + (hv == null ? "gap" : "") + cur + '">' + (hv == null ? "&ndash;" : hv) + "</td>";
+    }
+    var rhe = function (s) { s = s || {}; return '<td class="rhe">' + (s.runs == null ? "&ndash;" : s.runs) + '</td><td class="rhe">' + (s.hits == null ? "&ndash;" : s.hits) + '</td><td class="rhe">' + (s.errors == null ? "&ndash;" : s.errors) + "</td>"; };
+    var table = '<table class="ls"><tr>' + head + '<th class="rhe">R</th><th class="rhe">H</th><th class="rhe">E</th></tr>' +
+      '<tr><td class="tm">' + PV.logo("mlb", a.id, a.abbreviation, COLORS[a.id], 46, "lsl") + PV.esc(a.abbreviation) + "</td>" + rowA + rhe(get(ls, "teams.away")) + "</tr>" +
+      '<tr><td class="tm">' + PV.logo("mlb", h.id, h.abbreviation, COLORS[h.id], 46, "lsl") + PV.esc(h.abbreviation) + "</td>" + rowH + rhe(get(ls, "teams.home")) + "</tr></table>";
+    // Three fact cards that change with the game state
+    var f;
+    if (st === "final") {
+      var d = g.decisions || {};
+      f = [["WINNING PITCHER", get(d, "winner.fullName")], ["LOSING PITCHER", get(d, "loser.fullName")], ["SAVE", get(d, "save.fullName") || "NONE"]];
+    } else if (st === "live") {
+      f = [["PITCHING", get(ls, "defense.pitcher.fullName")], ["AT BAT", get(ls, "offense.batter.fullName")],
+        ["COUNT", (ls.balls != null ? ls.balls + "-" + ls.strikes : "–") + (ls.outs != null ? "  •  " + ls.outs + " OUT" + (ls.outs === 1 ? "" : "S") : "")]];
+    } else {
+      f = [["FIRST PITCH", PV.fmt(new Date(g.gameDate), { weekday: "short" }).toUpperCase() + " " + PV.timePT(g.gameDate)],
+        ["BALLPARK", get(g, "venue.name")], ["SERIES", seriesLine(g)]];
+    }
+    var facts = '<div class="facts">' + f.map(function (x) { return '<div class="fact"><label>' + x[0] + "</label><div>" + PV.esc(String(x[1] || "–").toUpperCase()) + "</div></div>"; }).join("") + "</div>";
 
-    var f1 = st === "LIVE" && ls && ls.defense && ls.defense.pitcher ? ["PITCHING NOW", ls.defense.pitcher.fullName] : ["FIRST PITCH", PV.timePT(g.startTime)];
-    var f2 = st === "LIVE" && ls && ls.offense && ls.offense.batter ? ["AT BAT", ls.offense.batter.fullName] : ["LEFT ON BASE", ls && ls.teams ? a.abbreviation + " " + ls.teams.away.leftOnBase + "   \u2022   " + h.abbreviation + " " + ls.teams.home.leftOnBase : "\u2013"];
-    html += '<div class="facts"><div class="fact"><label>' + f1[0] + "</label><div>" + PV.esc(String(f1[1]).toUpperCase()) + "</div></div>" +
-      '<div class="fact"><label>' + f2[0] + "</label><div>" + PV.esc(String(f2[1]).toUpperCase()) + "</div></div>" +
-      '<div class="fact"><label>AROUND THE LEAGUE</label><div>' + PV.esc(others(g)) + "</div></div></div>";
-    document.getElementById("main").innerHTML = html;
+    document.getElementById("main").innerHTML =
+      '<div class="banner"><h1>' + seriesTitle(g) + '</h1><div class="sub"><b>' + PV.esc(seriesLine(g)) + "</b><span>" +
+      PV.esc(String(get(g, "venue.name") || "").toUpperCase()) + (games.length > 1 ? " &bull; GAME " + (shown + 1) + " OF " + games.length + " TODAY" : "") + "</span></div></div>" +
+      '<div class="hero" style="--ac:' + (COLORS[a.id] || "#333333") + "55;--hc:" + (COLORS[h.id] || "#333333") + '55">' + teamBlock("away", g, "away") + '<div class="mid">' + mid + "</div>" + teamBlock("home", g, "home") + "</div>" +
+      table + facts;
   }
   function load() {
-    PV.getJSON(PV.WORKER + "/mlb", "mlb").then(function (res) {
+    PV.getJSON(API + todayISO(), "mlb-schedule-" + PV.todayKey(), 12000).then(function (res) {
       if (!res) { PV.message("BASEBALL LOADING", "RETRYING AUTOMATICALLY"); return; }
-      var games = Array.isArray(res.data) ? res.data : (res.data.games || []);
-      ALL = games;
-      var g = pick(games);
-      if (!g) { PV.message("NO GAMES TODAY", "CHECK BACK TOMORROW"); PV.updated(res); return; }
-      PV.getJSON(LS_URL + g.gamePk + "/linescore", "mlb-ls-" + g.gamePk, 8000).then(function (ls) {
-        render(g, ls ? ls.data : null);
-        PV.updated(res);
-      });
+      var all = [];
+      (res.data.dates || []).forEach(function (d) { all = all.concat(d.games || []); });
+      var picked = choose(all);
+      PV.updated(res);
+      if (!picked.length) { PV.message("NO MLB GAMES TODAY", "CHECK BACK TOMORROW"); return; }
+      var restart = picked.length !== games.length;
+      games = picked;
+      if (restart || !pager) {
+        if (pager) pager.stop();
+        pager = PV.pager(games.length, Math.round(CYCLE_MS / games.length), function (i) { shown = i; render(games[i]); });
+      } else {
+        render(games[shown] || games[0]);   // fresh numbers without jumping back to game 1
+      }
     });
   }
   load();
