@@ -415,8 +415,8 @@
 
     <footer class="footer">
       <div class="week-box">
-          <div class="week">WEEK 4</div>
-          <div class="date">UPDATED SEP 20, 2026</div>
+          <div class="week">RELEASED</div>
+          <div class="date">SEP. 26, 2026</div>
         </div>
       <div class="footer-right">College football lives here.</div>
     </footer>
@@ -520,7 +520,6 @@
         renderRankings(data.rankings);
         const through = data.through || "CURRENT AP POLL";
         document.querySelector(".week").textContent = through.replace(/^Through Games\s*/i, "").toUpperCase();
-        document.querySelector(".date").textContent = `UPDATED ${new Date(data.updatedAt || Date.now()).toLocaleDateString("en-US", { timeZone: "America/Los_Angeles", month: "short", day: "numeric", year: "numeric" }).toUpperCase()}`;
       } catch (error) {
         renderRankings(fallbackRankings);
       }
