@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PVHSN • NHL Standings</title>
+<link rel="stylesheet" href="core/pvhsn.css">
+<style>
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;height:100%}
+  .div{background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column}
+  .div h2{height:58px;flex:none;display:flex;align-items:center;padding:0 24px;font-family:"BC";font-weight:800;font-size:30px;letter-spacing:4px;
+    border-bottom:2px solid var(--accent);background:linear-gradient(90deg,rgba(255,255,255,.04),transparent)}
+  .div h2 span{color:var(--accent);margin-right:12px}
+  .row{display:grid;grid-template-columns:40px 56px 1fr 56px 56px 56px 64px 84px 76px;align-items:center;padding:0 20px;column-gap:6px}
+  .row.head{height:40px;flex:none;font-family:"BC";font-weight:700;font-size:18px;letter-spacing:2px;color:var(--faint)}
+  .row.team{flex:1;border-top:1px solid var(--line)}
+  .row .c{text-align:center}
+  .rk{font-family:"BC";font-weight:800;font-size:24px;color:var(--faint);text-align:center}
+  .row.in .rk{color:var(--amber)}
+  .row.cut{border-top:2px dashed rgba(255,182,39,.45)}
+  .row .logo,.row .initials{flex:none}
+  .nm{font-family:"BC";font-weight:700;font-size:32px;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .v{font-family:"BC";font-weight:700;font-size:32px;text-align:center}
+  .v.pts{color:var(--amber);font-size:36px;font-weight:800}
+  .v.sm{font-size:26px;font-weight:600}
+  .pos{color:var(--green)} .neg{color:var(--red)}
+  .legend{position:absolute;right:64px;top:118px;font-family:"BC";font-weight:600;font-size:18px;letter-spacing:2px;color:var(--faint)}
+  .legend b{color:var(--amber)}
+</style>
+</head>
+<body>
+<div id="stage"><div class="body"><div class="grid" id="grid"></div></div></div>
+<script src="core/pvhsn.js"></script>
+<script>
+(function () {
+  var CONF = (PV.qs("conf") || "WEST").toUpperCase() === "EAST" ? "EAST" : "WEST";
+  var URL = "https://site.api.espn.com/apis/v2/sports/hockey/nhl/standings?level=3";
+  document.documentElement.style.setProperty("--accent", CONF === "WEST" ? "#4c9aff" : "#ff4b55");
+  PV.frame({ title: "NHL STANDINGS &bull; <em>" + CONF + "</em>", source: "" });
+  var lg = document.createElement("div");
+  lg.className = "legend";
+  lg.innerHTML = "<b>1&ndash;3</b> DIVISION PLAYOFF SPOTS &bull; WILD CARDS NOT SHOWN";
+  document.getElementById("stage").appendChild(lg);
+
+  function stat(e, name) {
+    for (var i = 0; i < (e.stats || []).length; i++) if (e.stats[i].name === name) return e.stats[i];
+    return {};
+  }
+  function divisions(data) {
+    var out = [];
+    (data.children || []).forEach(function (conf) {
+      var isWest = /west/i.test(conf.name || "");
+      if ((CONF === "WEST") !== isWest) return;
+      (conf.children || []).forEach(function (div) {
+        var teams = ((div.standings || {}).entries || []).map(function (e) {
+          return {
+            ab: e.team.abbreviation, name: e.team.shortDisplayName || e.team.name,
+            gp: stat(e, "gamesPlayed").displayValue, w: stat(e, "wins").displayValue, l: stat(e, "losses").displayValue,
+            otl: stat(e, "otLosses").displayValue || stat(e, "overtimeLosses").displayValue,
+            pts: Number(stat(e, "points").value || 0), diff: stat(e, "pointDifferential").displayValue || stat(e, "differential").displayValue,
+            strk: stat(e, "streak").displayValue, gpn: Number(stat(e, "gamesPlayed").value || 0), wn: Number(stat(e, "wins").value || 0)
+          };
+        });
+        teams.sort(function (a, b) { return b.pts - a.pts || a.gpn - b.gpn || b.wn - a.wn; });   // NHL order: points, then fewer games, then wins
+        out.push({ name: String(div.name || "").replace(/ Division/i, "").toUpperCase(), teams: teams });
+      });
+    });
+    return out;
+  }
+  function render(divs) {
+    document.getElementById("grid").innerHTML = divs.map(function (d) {
+      return '<section class="div"><h2><span>' + CONF + "</span>" + PV.esc(d.name) + "</h2>" +
+        '<div class="row head"><div></div><div></div><div>TEAM</div><div class="c">GP</div><div class="c">W</div><div class="c">L</div><div class="c">OTL</div><div class="c">PTS</div><div class="c">STRK</div></div>' +
+        d.teams.map(function (t, i) {
+          var la = PV.isLA("nhl", t.ab), strk = String(t.strk || "–");
+          return '<div class="row team' + (i < 3 ? " in" : "") + (i === 3 ? " cut" : "") + (la ? " la-row" : "") + '">' +
+            '<div class="rk">' + (i + 1) + "</div>" + PV.logo("nhl", t.ab, t.ab, "#3a4452", 48) +
+            '<div class="nm">' + PV.esc(String(t.name).toUpperCase()) + (la ? '<span class="la-tag">LA</span>' : "") + "</div>" +
+            '<div class="v num sm">' + PV.esc(t.gp || "0") + '</div><div class="v num">' + PV.esc(t.w || "0") + '</div><div class="v num">' + PV.esc(t.l || "0") + "</div>" +
+            '<div class="v num">' + PV.esc(t.otl || "0") + '</div><div class="v num pts">' + t.pts + "</div>" +
+            '<div class="v num sm ' + (strk.charAt(0) === "W" ? "pos" : strk.charAt(0) === "L" ? "neg" : "") + '">' + PV.esc(strk) + "</div></div>";
+        }).join("") + "</section>";
+    }).join("");
+  }
+  function load() {
+    PV.getJSON(URL, "nhl-standings").then(function (res) {
+      if (!res) { PV.message("STANDINGS LOADING", "RETRYING AUTOMATICALLY"); return; }
+      render(divisions(res.data));
+      PV.updated(res);
+    });
+  }
+  load();
+  setInterval(load, 15 * 60 * 1000);
+})();
+</script>
+</body>
+</html>
