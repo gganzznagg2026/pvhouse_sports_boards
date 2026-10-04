@@ -430,7 +430,7 @@
     fitBoard();
     window.addEventListener('resize', fitBoard);
 
-    const rankings = [
+    const fallbackRankings = [
       { rank: 1, logoId: 251, team: "Texas", abbr: "TEXAS", record: "4-0", move: "—", color: "#9b4a08" },
       { rank: 2, logoId: 61, team: "Georgia", abbr: "G", record: "4-0", move: "—", color: "#990018" },
       { rank: 3, logoId: 87, team: "Notre Dame", abbr: "ND", record: "4-0", move: "—", color: "#0b376f" },
@@ -472,30 +472,62 @@
     }
 
     const grid = document.getElementById("rankingsGrid");
+    const teamMeta = Object.fromEntries(fallbackRankings.map(team => [team.team, team]));
+    const logoIds = {
+      "Texas": 251, "Georgia": 61, "Notre Dame": 87, "Miami (FL)": 2390, "Miami": 2390,
+      "Ohio State": 194, "Indiana": 84, "Alabama": 333, "Florida": 57, "Ole Miss": 145,
+      "BYU": 252, "LSU": 99, "Texas Tech": 2641, "Utah": 254, "Iowa": 2294,
+      "Oregon": 2483, "Mississippi State": 344, "Tennessee": 2633, "Southern Cal": 30,
+      "USC": 30, "Oklahoma State": 197, "Houston": 248, "SMU": 2567, "Boise State": 68,
+      "UCLA": 26, "Kentucky": 96, "Missouri": 142, "Penn State": 213, "Michigan": 130,
+      "Louisville": 97, "Texas A&M": 245
+    };
 
-    rankings.forEach(team => {
-      const card = document.createElement("article");
-      card.className = "team-card";
-      card.style.setProperty("--team", team.color);
-      card.style.setProperty("--team-rgb", team.color.slice(1).match(/.{2}/g).map(v => parseInt(v, 16)).join(","));
+    function renderRankings(rankings) {
+      grid.replaceChildren();
+      rankings.forEach(team => {
+        const meta = teamMeta[team.team] || teamMeta[team.team.replace("Southern Cal", "USC")] || {};
+        const view = { ...meta, ...team, logoId: logoIds[team.team] || meta.logoId };
+        const card = document.createElement("article");
+        card.className = "team-card";
+        card.style.setProperty("--team", view.color || "#365d75");
+        card.style.setProperty("--team-rgb", (view.color || "#365d75").slice(1).match(/.{2}/g).map(v => parseInt(v, 16)).join(","));
+        card.innerHTML = `
+          <div class="rank">${view.rank}</div>
+          <div class="mark"><img class="team-logo" src="${view.logoId ? `https://a.espncdn.com/i/teamlogos/ncaa/500-dark/${view.logoId}.png` : ""}" alt="${view.team} logo" /></div>
+          <div class="record">${view.record || ""}</div>
+          <div class="move ${movementClass(view.move || "NR")}">${movementText(view.move || "NR")}</div>
+          <div class="name">${String(view.team || "Unknown").toUpperCase()}</div>
+        `;
+        const logo = card.querySelector('.team-logo');
+        if (logo && !view.logoId) logo.replaceWith(Object.assign(document.createElement('span'), { className: 'logo-fallback', textContent: view.abbr || String(view.team || '').slice(0, 3).toUpperCase() }));
+        else if (logo) logo.addEventListener('error', () => {
+          const fallback = document.createElement('span');
+          fallback.className = 'logo-fallback';
+          fallback.textContent = view.abbr || String(view.team || '').slice(0, 3).toUpperCase();
+          logo.replaceWith(fallback);
+        }, { once: true });
+        grid.appendChild(card);
+      });
+    }
 
-      card.innerHTML = `
-        <div class="rank">${team.rank}</div>
-        <div class="mark"><img class="team-logo" src="https://a.espncdn.com/i/teamlogos/ncaa/500-dark/${team.logoId}.png" alt="${team.team} logo" /></div>
-        <div class="record">${team.record}</div>
-        <div class="move ${movementClass(team.move)}">${movementText(team.move)}</div>
-        <div class="name">${team.team.toUpperCase()}</div>
-      `;
+    async function loadRankings() {
+      try {
+        const response = await fetch(`https://pv-house-sports.gian-ganziano.workers.dev/ncaa-rankings?t=${Date.now()}`, { cache: "no-store" });
+        if (!response.ok) throw new Error(`Rankings service returned ${response.status}`);
+        const data = await response.json();
+        if (!Array.isArray(data.rankings) || data.rankings.length !== 25) throw new Error("Incomplete rankings response");
+        renderRankings(data.rankings);
+        const through = data.through || "CURRENT AP POLL";
+        document.querySelector(".week").textContent = through.replace(/^Through Games\s*/i, "").toUpperCase();
+        document.querySelector(".date").textContent = `UPDATED ${new Date(data.updatedAt || Date.now()).toLocaleString("en-US", { timeZone: "America/Los_Angeles", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).toUpperCase()} PT`;
+      } catch (error) {
+        renderRankings(fallbackRankings);
+      }
+    }
 
-      const logo = card.querySelector('.team-logo');
-      logo.addEventListener('error', () => {
-        const fallback = document.createElement('span');
-        fallback.className = 'logo-fallback';
-        fallback.textContent = team.abbr;
-        logo.replaceWith(fallback);
-      }, { once: true });
-      grid.appendChild(card);
-    });
+    loadRankings();
+    setInterval(loadRankings, 60 * 60 * 1000);
   </script>
 </body>
 </html>
