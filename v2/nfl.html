@@ -35,12 +35,35 @@
   .tot b{font-weight:700;font-size:38px}
   .tot small{font-weight:600;font-size:18px;color:var(--faint);letter-spacing:1px;margin-top:2px}
   .dim{color:var(--faint)}
+
+  /* Scoreboard mode (switches on once today's first game kicks off) */
+  .cnt{display:flex;gap:30px}
+  .cnt b{color:var(--ink);font-size:24px;margin-right:6px}
+  .cnt .l b{color:var(--red)} .cnt .u b{color:var(--blue)}
+  .cards{position:absolute;left:0;right:0;top:52px;bottom:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,1fr);gap:18px 24px}
+  .card{background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+  .card.live{border-color:rgba(255,90,79,.45);background:linear-gradient(180deg,rgba(255,90,79,.07),var(--panel) 40%)}
+  .card .tm{flex:1;display:flex;align-items:center;gap:14px;padding:0 20px;min-width:0}
+  .card .tm + .tm{border-top:1px solid var(--line)}
+  .card .tm .logo,.card .tm .initials{flex:none}
+  .card .tn{font-family:"BC";font-weight:700;font-size:36px;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+  .card .rec{font-family:"BC";font-weight:600;font-size:20px;color:var(--faint);letter-spacing:1px;flex:none}
+  .card .poss{width:12px;height:12px;border-radius:50%;background:var(--amber);flex:none}
+  .card .sc{font-family:"BC";font-weight:800;font-size:48px;min-width:64px;text-align:right;flex:none}
+  .card.final .sc{color:var(--faint)} .card.final .win .sc,.card.final .win .tn{color:var(--ink)} .card.final .tn{color:var(--dim)}
+  .card.live .sc{color:var(--amber)}
+  .card .st{height:42px;flex:none;display:flex;align-items:center;gap:14px;padding:0 20px;border-top:1px solid var(--line);background:rgba(0,0,0,.25);
+    font-family:"BC";font-weight:600;font-size:21px;letter-spacing:2px;color:var(--dim);white-space:nowrap;overflow:hidden}
+  .card .st .dd{color:var(--ink)} .card .st .rz{color:var(--red)}
+  .card .st .odds{color:var(--amber)}
+  .card .st .net{margin-left:auto;color:var(--faint)}
 </style>
 </head>
 <body>
 <div id="stage"><div class="body">
   <div class="sum"><span id="info">LINES: DRAFTKINGS VIA ESPN &bull; SMALL NUMBERS = OPENING LINE</span><span class="pg" id="pgtxt"></span></div>
-  <div class="tbl"><div class="hrow"><div>KICKOFF</div><div>MATCHUP</div><div class="c">SPREAD</div><div class="c">TOTAL</div><div class="c">MONEYLINE</div></div><div id="rows" style="flex:1;display:flex;flex-direction:column"></div></div>
+  <div class="cards" id="cards" style="display:none"></div>
+  <div class="tbl" id="tbl"><div class="hrow"><div>KICKOFF</div><div>MATCHUP</div><div class="c">SPREAD</div><div class="c">TOTAL</div><div class="c">MONEYLINE</div></div><div id="rows" style="flex:1;display:flex;flex-direction:column"></div></div>
 </div></div>
 <script src="core/pvhsn.js"></script>
 <script>
@@ -69,7 +92,10 @@
         away: side(a), home: side(h),
         spread: { a: get(o, "pointSpread.away.close.line"), ao: get(o, "pointSpread.away.open.line"), h: get(o, "pointSpread.home.close.line"), ho: get(o, "pointSpread.home.open.line") },
         ml: { a: get(o, "moneyline.away.close.odds"), ao: get(o, "moneyline.away.open.odds"), h: get(o, "moneyline.home.close.odds"), ho: get(o, "moneyline.home.open.odds") },
-        total: { c: get(o, "total.over.close.line") || (o.overUnder ? "o" + o.overUnder : null), o: get(o, "total.over.open.line") }
+        total: { c: get(o, "total.over.close.line") || (o.overUnder ? "o" + o.overUnder : null), o: get(o, "total.over.open.line") },
+        details: o.details || "", ou: o.overUnder || null,
+        poss: get(c, "situation.possession"), dd: get(c, "situation.downDistanceText") || get(c, "situation.shortDownDistanceText") || "",
+        redzone: !!get(c, "situation.isRedZone"), awayId: get(a, "team.id"), homeId: get(h, "team.id")
       };
     });
   }
@@ -101,7 +127,44 @@
       '<div class="tot">' + (g.total.c ? "<b class=\"num\">" + PV.esc(String(g.total.c).replace(/^o/, "")) + "</b>" + (g.total.o && g.total.o !== g.total.c ? "<small>OPEN " + PV.esc(String(g.total.o).replace(/^o/, "")) + "</small>" : "<small>O/U</small>") : '<b class="dim">&ndash;</b>') + "</div>" +
       '<div class="col">' + line(g.ml.a, g.ml.ao, favA) + line(g.ml.h, g.ml.ho, favH) + "</div></div>";
   }
+  function ptDay(iso) { return PV.fmt(new Date(iso), { year: "numeric", month: "2-digit", day: "2-digit" }); }
+  function card(g) {
+    var a = Number(g.away.score), h = Number(g.home.score);
+    var cls = g.state === "in" ? "live" : g.state === "post" ? "final" : "pre";
+    var tm = function (t, id, win) {
+      return '<div class="tm' + (win ? " win" : "") + '">' + PV.logo("nfl", t.ab, t.ab, "#3a4452", 44) +
+        '<span class="tn">' + PV.esc(String(t.name).toUpperCase()) + (t.la ? '<span class="la-tag">LA</span>' : "") + "</span>" +
+        (g.state === "in" && g.poss && g.poss === id ? '<span class="poss"></span>' : "") +
+        '<span class="rec num">' + PV.esc(t.rec) + "</span>" + (g.state === "pre" ? "" : '<span class="sc num">' + PV.esc(t.score) + "</span>") + "</div>";
+    };
+    var st;
+    if (g.state === "in") st = '<span class="pill live">LIVE</span><span>' + PV.esc(g.detail.toUpperCase()) + "</span>" + (g.dd ? '<span class="dd' + (g.redzone ? " rz" : "") + '">' + PV.esc(g.dd.toUpperCase()) + "</span>" : "");
+    else if (g.state === "post") st = '<span class="pill final">' + PV.esc(g.detail.toUpperCase()) + "</span>";
+    else st = '<span class="pill next">' + PV.timePT(g.date) + "</span>" + (g.details ? '<span class="odds">' + PV.esc(g.details) + (g.ou ? " \u2022 O/U " + g.ou : "") + "</span>" : "");
+    return '<div class="card ' + cls + (g.away.la || g.home.la ? " la-card" : "") + '">' + tm(g.away, g.awayId, g.state === "post" && a > h) + tm(g.home, g.homeId, g.state === "post" && h > a) +
+      '<div class="st">' + st + '<span class="net">' + PV.esc(g.net.toUpperCase()) + "</span></div></div>";
+  }
+  function showScoreboard(games) {
+    var la = function (g) { return g.away.la || g.home.la ? 0 : 1; }, r = { "in": 0, pre: 1, post: 2 };
+    games.sort(function (x, y) { return (r[x.state] - r[y.state]) || (la(x) - la(y)) || (new Date(x.date) - new Date(y.date)); });
+    var live = 0, up = 0, fin = 0;
+    games.forEach(function (g) { if (g.state === "in") live++; else if (g.state === "pre") up++; else fin++; });
+    var per = 12, pages = Math.max(1, Math.ceil(games.length / per));
+    document.getElementById("boardTitle").innerHTML = "NFL &bull; <em>SCOREBOARD</em>";
+    document.getElementById("tbl").style.display = "none";
+    document.getElementById("cards").style.display = "";
+    document.getElementById("info").innerHTML = '<span class="cnt"><span class="l"><b class="num">' + live + '</b>LIVE</span><span class="u"><b class="num">' + up + '</b>UPCOMING</span><span><b class="num">' + fin + "</b>FINAL</span></span>";
+    if (pager) pager.stop();
+    pager = PV.pager(pages, Math.round(CYCLE_MS / pages), function (i) {
+      document.getElementById("cards").innerHTML = games.slice(i * per, (i + 1) * per).map(card).join("");
+      document.getElementById("pgtxt").textContent = pages > 1 ? "PAGE " + (i + 1) + " OF " + pages : "";
+    });
+  }
   function show(games, week) {
+    document.getElementById("boardTitle").innerHTML = "NFL &bull; <em>LINES</em>";
+    document.getElementById("tbl").style.display = "";
+    document.getElementById("cards").style.display = "none";
+    document.getElementById("info").innerHTML = "LINES: DRAFTKINGS VIA ESPN &bull; SMALL NUMBERS = OPENING LINE";
     var pages = Math.max(1, Math.ceil(games.length / PER_PAGE));
     if (pager) pager.stop();
     pager = PV.pager(pages, Math.round(CYCLE_MS / pages), function (i) {
@@ -116,12 +179,18 @@
       if (!res) { PV.message("LINES LOADING", "RETRYING AUTOMATICALLY"); return; }
       var games = order(parse(res.data));
       if (!games.length) { PV.message("NO NFL GAMES THIS WEEK", "SEE YOU NEXT WEEK"); return; }
-      show(games, res.data.week && res.data.week.number);
+      // Lines until today's first kickoff, then a scoreboard of today's games for the rest of the day
+      var today = ptDay(new Date().toISOString());
+      var todays = games.filter(function (g) { return ptDay(g.date) === today; });
+      var started = todays.some(function (g) { return g.state !== "pre"; });
+      // (Thursday/Monday single games stay on the lines board, which shows the live score too)
+      if (started && todays.length >= 3) showScoreboard(todays);
+      else show(games, res.data.week && res.data.week.number);
       PV.updated(res);
     });
   }
   load();
-  setInterval(load, 5 * 60 * 1000);
+  setInterval(load, 2 * 60 * 1000);
 })();
 </script>
 </body>
