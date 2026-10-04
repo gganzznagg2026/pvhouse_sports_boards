@@ -520,7 +520,7 @@
         renderRankings(data.rankings);
         const through = data.through || "CURRENT AP POLL";
         document.querySelector(".week").textContent = through.replace(/^Through Games\s*/i, "").toUpperCase();
-        document.querySelector(".date").textContent = `UPDATED ${new Date(data.updatedAt || Date.now()).toLocaleString("en-US", { timeZone: "America/Los_Angeles", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).toUpperCase()} PT`;
+        document.querySelector(".date").textContent = `UPDATED ${new Date(data.updatedAt || Date.now()).toLocaleDateString("en-US", { timeZone: "America/Los_Angeles", month: "short", day: "numeric", year: "numeric" }).toUpperCase()}`;
       } catch (error) {
         renderRankings(fallbackRankings);
       }
