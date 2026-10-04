@@ -1146,17 +1146,20 @@ async function loadGames(){
 
 
     /*
-      Strict chronological order.
+      Put the most useful information first:
+      live games, then upcoming games, then finals.
+      Within each group, keep chronological order.
     */
 
-    games.sort(
-      (a,b) =>
-        new Date(
-          a.commence_time
-        ) -
-        new Date(
-          b.commence_time
-        )
+    const statusPriority = game => {
+      if (game.completed) return 2;
+      if (game.scores && Array.isArray(game.scores) && game.scores.length) return 0;
+      return 1;
+    };
+
+    games.sort((a,b) =>
+      statusPriority(a) - statusPriority(b) ||
+      new Date(a.commence_time) - new Date(b.commence_time)
     );
 
 
