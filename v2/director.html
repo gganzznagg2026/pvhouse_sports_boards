@@ -52,6 +52,12 @@
       var la = function (e, lg) { return (get(e, "competitions.0.competitors") || []).some(function (c) { return PV.isLA(lg, String(lg === "ncaa" ? get(c, "team.id") : get(c, "team.abbreviation"))); }); };
       return {
         ok: !!res, today: t.length,
+        mondayFeature: ev.some(function (e) {
+          var p = {};
+          new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "long", hour: "numeric", hour12: false })
+            .formatToParts(new Date(e.date)).forEach(function (x) { p[x.type] = x.value; });
+          return p.weekday === "Monday" && Number(p.hour) % 24 >= 17 && (st(e) === "pre" || st(e) === "in");
+        }),
         live: t.filter(function (e) { return st(e) === "in"; }).length,
         upcoming: t.filter(function (e) { return st(e) === "pre"; }).length,
         started: t.some(function (e) { return st(e) !== "pre"; }),
@@ -113,6 +119,7 @@
       if (nfl.laSoon("nfl")) add("LA Football (preview)", "featured-football.html?mode=la&page=20", 20, 1, 1);
       add("Featured Football (big game)", "featured-football.html?mode=prime&page=20", 20, 1, 1);
       add(flip ? "NFL Standings NFC" : "NFL Standings AFC", "nfl-standings.html?conf=" + (flip ? "NFC" : "AFC"), 18, 1, 1);
+      if (nfl.mondayFeature) add("Monday Night Football", "featured-football.html?mode=monday&page=20", 20, 1, 1);
       note.push("NFL: no games today, lines + one standings board");
     }
     // College football
