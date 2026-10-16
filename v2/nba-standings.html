@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="color-scheme" content="dark">
+<title>PVHSN • NBA Standings</title><link rel="stylesheet" href="core/pvhsn.css">
+<style>
+html,body{background:#000}.grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;height:100%}.conf{background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;min-height:0}.conf h2{height:54px;flex:none;display:flex;align-items:center;padding:0 22px;border-bottom:2px solid var(--accent);font:800 30px "BC";letter-spacing:3px}.conf h2 small{margin-left:auto;color:var(--faint);font-size:18px;letter-spacing:2px}.row{display:grid;grid-template-columns:34px 38px 1fr 48px 48px 66px 52px 62px;align-items:center;column-gap:8px;padding:0 16px;min-height:0}.head{height:34px;flex:none;font:700 18px "BC";color:var(--faint);letter-spacing:1px}.team{flex:1;border-top:1px solid var(--line)}.c{text-align:center}.rk{font:700 22px "BC";color:var(--faint);text-align:center}.nm{font:700 28px "BC";white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v{font:700 27px "BC";text-align:center}.pct{color:var(--amber)}.la-tag{font-size:14px;margin-left:8px}.legend{position:absolute;top:118px;right:64px;font:600 18px "BC";letter-spacing:2px;color:var(--faint)}.cut{border-top:2px dashed rgba(255,182,39,.45)}
+</style></head><body><div id="stage"><div class="body"><div class="grid" id="grid"></div></div></div>
+<script src="core/pvhsn.js"></script><script>
+(function(){
+  var yr=Number(PV.fmt(new Date(),{year:"numeric"})), month=Number(PV.fmt(new Date(),{month:"numeric"}));
+  var SEASON=month>=9?yr+1:yr;
+  PV.frame({title:"NBA <em>STANDINGS</em>",source:""});
+  var legend=document.createElement("div");legend.className="legend";legend.textContent="1–6 PLAYOFF POSITIONS • 7–10 PLAY-IN POSITIONS";document.getElementById("stage").appendChild(legend);
+  function stat(e,n){for(var i=0;i<(e.stats||[]).length;i++)if(e.stats[i].name===n)return e.stats[i];return {};}
+  function conferences(data){
+    return (data.children||[]).filter(function(c){return /east|west/i.test(c.name||"");}).map(function(c){
+      var entries=((c.standings||{}).entries||[]).slice();
+      var started=entries.some(function(e){return Number(stat(e,"wins").value)+Number(stat(e,"losses").value)>0;});
+      entries.sort(function(a,b){var sa=Number(stat(a,"playoffSeed").value),sb=Number(stat(b,"playoffSeed").value);return (started&&sa>0&&sb>0?sa-sb:0)||Number(stat(b,"winPercent").value||0)-Number(stat(a,"winPercent").value||0)||(a.team.displayName||"").localeCompare(b.team.displayName||"");});
+      return {west:/west/i.test(c.name),entries:entries,started:started};
+    }).sort(function(a,b){return b.west-a.west;});
+  }
+  function render(data){
+    document.getElementById("grid").innerHTML=conferences(data).map(function(c){
+      return '<section class="conf" style="--accent:'+(c.west?'#4c9aff':'#ff4b55')+'"><h2>'+(c.west?'WESTERN':'EASTERN')+' CONFERENCE<small>'+(SEASON-1)+'–'+String(SEASON).slice(2)+'</small></h2><div class="row head"><div></div><div></div><div>TEAM</div><div class="c">W</div><div class="c">L</div><div class="c">PCT</div><div class="c">GB</div><div class="c">STRK</div></div>'+c.entries.map(function(e,i){
+        var t=e.team,la=PV.isLA("nba",t.abbreviation);
+        return '<div class="row team'+(la?' la-row':'')+(c.started&&(i===6||i===10)?' cut':'')+'"><div class="rk">'+(c.started?i+1:'–')+'</div>'+PV.logo("nba",t.abbreviation,t.abbreviation,"#3a4452",34)+'<div class="nm">'+PV.esc((t.shortDisplayName||t.name).toUpperCase())+(la?'<span class="la-tag">LA</span>':'')+'</div>'+["wins","losses","winPercent","gamesBehind","streak"].map(function(n){return '<div class="v num'+(n==='winPercent'?' pct':'')+'">'+PV.esc(stat(e,n).displayValue||'–')+'</div>';}).join('')+'</div>';
+      }).join('')+'</section>';
+    }).join('');
+  }
+  function load(){PV.getJSON("https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?season="+SEASON+"&seasontype=2","nba-standings-"+SEASON).then(function(res){
+    if(!res||Number((res.data.season||{}).year)!==SEASON||conferences(res.data).length!==2){document.getElementById("grid").innerHTML='<div class="msg"><b>STANDINGS LOADING</b><span>RETRYING AUTOMATICALLY</span></div>';return;}
+    render(res.data);PV.updated(res);
+  });}
+  load();setInterval(load,15*60*1000);
+})();
+</script></body></html>
