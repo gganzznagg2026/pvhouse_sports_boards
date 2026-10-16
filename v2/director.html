@@ -33,6 +33,7 @@
    and each board loads fresh (one at a time) so the 1 GB player stays light. */
 (function () {
   var TZ = "America/Los_Angeles";
+  var NBA_START = "20261020"; // Opening day, Pacific time. No NBA boards before this date.
   var DEBUG = PV.qs("debug") === "1";
   var frames = [document.getElementById("f0"), document.getElementById("f1")], cur = 0;
   var lineup = [], step = 0, why = [];
@@ -80,14 +81,15 @@
       espnDay("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard", "dir-nfl"),
       espnDay("https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?limit=300&groups=80&dates=" + k, "dir-ncaa-" + k),
       espnDay("https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=" + k, "dir-nhl-" + k),
-      PV.getJSON("https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=" + iso(k), "dir-mlb-" + k, 10000)
+      PV.getJSON("https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=" + iso(k), "dir-mlb-" + k, 10000),
+      k >= NBA_START ? espnDay("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=" + k, "dir-nba-" + k) : Promise.resolve(null)
     ]).then(function (r) {
       var mlbGames = [];
       if (r[3]) (r[3].data.dates || []).forEach(function (d) { mlbGames = mlbGames.concat(d.games || []); });
       var ms = function (g) { var s = get(g, "status.abstractGameState"); return s === "Live" ? "in" : s === "Final" ? "post" : "pre"; };
       var mlbLA = function (g) { return PV.isLA("mlb", get(g, "teams.away.team.id")) || PV.isLA("mlb", get(g, "teams.home.team.id")); };
       return {
-        nfl: r[0], ncaa: r[1], nhl: r[2],
+        nfl: r[0], ncaa: r[1], nhl: r[2], nba: r[4],
         mlb: { today: mlbGames.length, live: mlbGames.filter(function (g) { return ms(g) === "in"; }).length,
           post: mlbGames.some(function (g) { return /^[FDLW]$/.test(g.gameType); }),
           laToday: mlbGames.some(mlbLA), laLive: mlbGames.some(function (g) { return ms(g) === "in" && mlbLA(g); }) }
@@ -103,6 +105,7 @@
     var add = function (name, url, secs, weight, rank) { L.push({ name: name, url: url, secs: secs, weight: weight || 1, rank: rank || 1, grp: grp }); };
     var flip = Math.floor(Date.now() / 600000) % 2;   // alternates every 10 minutes
     var nfl = s.nfl, ncaa = s.ncaa, nhl = s.nhl, mlb = s.mlb;
+    var nba = ptKey(new Date()) >= NBA_START ? s.nba : null;
 
     // NFL
     grp = "nfl";
@@ -150,9 +153,17 @@
       add(flip ? "NHL Standings East" : "NHL Standings West", "nhl-standings.html?conf=" + (flip ? "EAST" : "WEST"), 18, 1, 1);
       note.push("NHL: no games today, one standings board");
     }
+    // NBA activates automatically on opening day, using the restaurant's Pacific date.
+    grp = "nba";
+    if (nba) {
+      if (nba.laToday("nba")) add("LA Basketball (Lakers & Clippers)", "featured-basketball.html?page=20", 40, nba.live ? 2 : 1, nba.live ? 3 : 2);
+      if (nba.today) add("NBA Scores & Lines", "nba.html?page=20", 60, nba.live ? 2 : 1, nba.live ? 3 : 2);
+      add("NBA Standings", "nba-standings.html", 25, 1, nba.today ? 2 : 1);
+      note.push("NBA: " + nba.today + " games today" + (nba.live ? ", " + nba.live + " live" : ""));
+    }
     // Sports Wire headlines: only when nothing is live (slow days, mornings, between games)
     grp = "news";
-    if (!(nfl.live || ncaa.live || mlb.live || nhl.live)) {
+    if (!(nfl.live || ncaa.live || mlb.live || nhl.live || (nba && nba.live))) {
       add("Sports Wire (headlines)", "headlines.html?page=20", 60, 1, 1);
       note.push("Headlines: nothing live right now, Sports Wire added");
     }
