@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="dark">
+<style>html,body{background:#000}</style>
+<title>PVHSN • LA Basketball</title>
+<link rel="stylesheet" href="core/pvhsn.css">
+<style>
+  .banner{height:92px;display:flex;align-items:center;gap:22px}
+  .banner h1{font-family:"BC";font-weight:800;font-size:70px;letter-spacing:3px;line-height:1;color:var(--amber)}
+  .banner .sub b{display:block;color:var(--ink);font-weight:700;font-size:30px;letter-spacing:4px}
+  .banner .sub{margin-left:auto;text-align:right;font-family:"BC";font-weight:600;font-size:24px;letter-spacing:3px;color:var(--dim);line-height:1.35}
+  .hero{height:300px;display:grid;grid-template-columns:1fr 420px 1fr;align-items:center;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    background:linear-gradient(90deg,var(--ac) 0,transparent 30%,transparent 70%,var(--hc) 100%)}
+  .tm{display:flex;align-items:center;gap:18px;padding:0 24px;min-width:0}
+  .tm.home{flex-direction:row-reverse;text-align:right}
+  .tm img{width:150px;height:150px;flex:none}
+  .tm .city{font-family:"BC";font-weight:600;font-size:30px;letter-spacing:5px;color:var(--dim)}
+  .tm .nick{font-family:"BC";font-weight:800;font-size:58px;line-height:.95;white-space:nowrap}
+  .tm .rec{font-family:"BC";font-weight:700;font-size:28px;letter-spacing:2px;color:var(--amber);margin-top:6px}
+  .mid{text-align:center}
+  .mid .big{font-family:"BC";font-weight:800;font-size:92px;line-height:1}
+  .mid .big i{font-style:normal;color:var(--faint);margin:0 18px}
+  .mid .when{font-family:"BC";font-weight:700;font-size:40px;letter-spacing:1px}
+  .mid .net{font-family:"BC";font-weight:600;font-size:24px;letter-spacing:3px;color:var(--dim);margin-top:8px}
+  .mid .pill{font-size:24px;margin-top:12px}
+  .low{display:grid;grid-template-columns:600px 1fr;gap:28px;margin-top:28px;height:380px}
+  .box{background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column}
+  .box h3{height:54px;display:flex;align-items:center;padding:0 24px;font-family:"BC";font-weight:800;font-size:24px;letter-spacing:4px;color:var(--amber);border-bottom:1px solid var(--line2)}
+  .box h3 span{margin-left:auto;color:var(--faint);font-size:18px;letter-spacing:2px;font-weight:600}
+  .ln{flex:1;display:grid;grid-template-columns:150px 1fr 1fr;align-items:center;padding:0 24px;border-top:1px solid var(--line)}
+  .ln:first-of-type{border-top:0}
+  .ln.head{flex:none;height:44px;font-family:"BC";font-weight:700;font-size:18px;letter-spacing:3px;color:var(--faint)}
+  .ln .k{font-family:"BC";font-weight:700;font-size:22px;letter-spacing:3px;color:var(--dim)}
+  .ln .v{font-family:"BC";font-weight:800;font-size:44px;text-align:center}
+  .ln .v small{display:block;font-size:18px;font-weight:600;color:var(--faint);letter-spacing:2px}
+  .ln .v.fav{color:var(--amber)}
+  .ld{flex:1;display:grid;grid-template-columns:1fr 150px 1fr;align-items:center;padding:0 24px;border-top:1px solid var(--line)}
+  .ld:first-of-type{border-top:0}
+  .ld .p{font-family:"BC";min-width:0}
+  .ld .p b{display:block;font-weight:800;font-size:34px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ld .p span{display:block;font-weight:600;font-size:22px;color:var(--dim);letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ld .p.r{text-align:right}
+  .ld .cat{text-align:center;font-family:"BC";font-weight:700;font-size:20px;letter-spacing:3px;color:var(--faint)}
+</style>
+</head>
+<body>
+<div id="stage"><div class="body" id="main"></div></div>
+<script src="core/pvhsn.js"></script>
+<script>
+(function () {
+  var ESPN = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard";
+  PV.frame({ title: "LOS ANGELES <em>BASKETBALL</em>", source: "SOURCE: ESPN / DRAFTKINGS" });
+  function dateKey() { var d = PV.qs("date"); return /^\d{8}$/.test(d || "") ? d : PV.todayKey(); }
+  function get(o, path) { return path.split(".").reduce(function (a, k) { return a && a[k] != null ? a[k] : null; }, o); }
+  function side(c) {
+    var t = c.team || {}, rec = "", lead = {};
+    (c.records || []).forEach(function (r) { if (r.type === "total") rec = r.summary; });
+    (c.leaders || []).forEach(function (l) {
+      var x = (l.leaders || [])[0];
+      if (x) lead[l.name] = { who: get(x, "athlete.shortName") || get(x, "athlete.displayName") || "", stat: x.displayValue || "" };
+    });
+    var ab = t.abbreviation;
+    return { ab: ab, city: t.location || "", nick: t.shortDisplayName || t.name || ab, color: PV.hex(t.color), rec: rec, score: c.score, lead: lead, la: PV.isLA("nba", ab) };
+  }
+  function parse(data) {
+    return (data.events || []).filter(function(e) { return !e.season || e.season.type !== 1; }).map(function (e) {
+      var c = e.competitions[0], st = c.status || {}, ty = st.type || {}, a = null, h = null, nets = [];
+      c.competitors.forEach(function (x) { if (x.homeAway === "away") a = x; else h = x; });
+      (c.broadcasts || []).forEach(function (b) { nets = nets.concat(b.names || []); });
+      var o = (c.odds || [])[0] || {};
+      return {
+        id: e.id, date: e.date, state: ty.state, detail: ty.shortDetail || "", net: nets.join(" / "),
+        venue: [get(c, "venue.fullName"), get(c, "venue.address.city")].filter(Boolean).join(" • "),
+        away: side(a), home: side(h), odds: o
+      };
+    });
+  }
+  // Every LA game today appears, including finals; a Lakers-Clippers matchup appears once.
+  function pick(games) {
+    var rank = { "in": 0, pre: 1, post: 2 };
+    return games.filter(function(g) { return g.away.la || g.home.la; })
+      .sort(function(a,b) { return rank[a.state] - rank[b.state] || new Date(a.date) - new Date(b.date); });
+  }
+  function label(g) { return g.away.la && g.home.la ? "LA SHOWDOWN" : "LOS ANGELES GAME DAY"; }
+  function joinUs(g) { return g.state === "pre" ? "JOIN US FOR THE GAME" : ""; }
+  function logo(t) {
+    return PV.logo("nba", t.ab, t.ab, t.color, 150);
+  }
+  function teamBlock(t, cls) {
+    return '<div class="tm ' + cls + '">' + logo(t) + '<div><div class="city">' + PV.esc(t.city.toUpperCase()) + "</div>" +
+      '<div class="nick">' + PV.esc(t.nick.toUpperCase()) + "</div>" +
+      '<div class="rec">' + PV.esc(t.rec) + (t.la ? '<span class="la-tag">LA</span>' : "") + "</div></div></div>";
+  }
+  function render(g) {
+    var o = g.odds, mid;
+    if (g.state === "pre") mid = '<div class="when">' + PV.fmt(new Date(g.date), { weekday: "short" }).toUpperCase() + " • " + PV.timePT(g.date) + '</div><div class="net">' + PV.esc(g.net.toUpperCase()) + "</div>";
+    else mid = '<div class="big num">' + PV.esc(g.away.score) + "<i>&ndash;</i>" + PV.esc(g.home.score) + "</div>" +
+      '<span class="pill ' + (g.state === "in" ? "live" : "final") + '">' + (g.state === "in" ? "LIVE " : "") + PV.esc(g.detail.toUpperCase()) + "</span>";
+    var spA = get(o, "pointSpread.away.close.line"), spH = get(o, "pointSpread.home.close.line");
+    var favA = spA && spA.charAt(0) === "-", favH = spH && spH.charAt(0) === "-";
+    var cell = function (cur, open, fav) {
+      if (cur == null) return '<div class="v" style="color:var(--faint)">&ndash;</div>';
+      return '<div class="v num' + (fav ? " fav" : "") + '">' + PV.esc(cur) + (open != null && open !== cur ? "<small>OPEN " + PV.esc(open) + "</small>" : "<small>&nbsp;</small>") + "</div>";
+    };
+    var tot = get(o, "total.over.close.line") || (o.overUnder ? "o" + o.overUnder : null), totO = get(o, "total.over.open.line");
+    var lines = '<div class="box"><h3>THE LINE<span>' + PV.esc(String(get(o, "provider.name") || "").toUpperCase()) + "</span></h3>" +
+      '<div class="ln head"><div></div><div style="text-align:center">' + PV.esc(g.away.ab) + '</div><div style="text-align:center">' + PV.esc(g.home.ab) + "</div></div>" +
+      '<div class="ln"><div class="k">SPREAD</div>' + cell(spA, get(o, "pointSpread.away.open.line"), favA) + cell(spH, get(o, "pointSpread.home.open.line"), favH) + "</div>" +
+      '<div class="ln"><div class="k">MONEYLINE</div>' + cell(get(o, "moneyline.away.close.odds"), get(o, "moneyline.away.open.odds"), favA) + cell(get(o, "moneyline.home.close.odds"), get(o, "moneyline.home.open.odds"), favH) + "</div>" +
+      '<div class="ln"><div class="k">TOTAL</div><div class="v num" style="grid-column:span 2">' + (tot ? PV.esc(String(tot).replace(/^o/, "O/U ")) + (totO && totO !== tot ? "<small>OPEN " + PV.esc(String(totO).replace(/^o/, "")) + "</small>" : "<small>&nbsp;</small>") : "&ndash;") + "</div></div></div>";
+    var cats = [["pointsPerGame", "POINTS"], ["reboundsPerGame", "REBOUNDS"], ["assistsPerGame", "ASSISTS"]];
+    var leaders = '<div class="box"><h3>' + (g.state === "pre" ? "SEASON LEADERS" : "GAME LEADERS") + "<span>" + PV.esc(g.away.ab) + " vs " + PV.esc(g.home.ab) + "</span></h3>" +
+      cats.map(function (c) {
+        var statKey = g.state === "pre" ? c[0] : c[0].replace("PerGame", "");
+        var a = g.away.lead[statKey] || {}, h = g.home.lead[statKey] || {};
+        return '<div class="ld"><div class="p"><b>' + PV.esc((a.who || "–").toUpperCase()) + "</b><span>" + PV.esc((a.stat || "").toUpperCase()) + "</span></div>" +
+          '<div class="cat">' + c[1] + '</div><div class="p r"><b>' + PV.esc((h.who || "–").toUpperCase()) + "</b><span>" + PV.esc((h.stat || "").toUpperCase()) + "</span></div></div>";
+      }).join("") + "</div>";
+    if (!Object.keys(g.away.lead).length && !Object.keys(g.home.lead).length) {
+      leaders = '<div class="box"><h3>' + (g.state === "pre" ? "SEASON LEADERS" : "GAME LEADERS") + '</h3><div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:BC;text-align:center"><b style="font-size:36px;letter-spacing:2px">' + (g.state === "pre" ? "READY FOR TIPOFF" : "GAME IN PROGRESS") + '</b><span style="font-size:24px;color:var(--dim);margin-top:16px">PLAYER STATS WILL APPEAR WHEN AVAILABLE</span></div></div>';
+    }
+    document.getElementById("main").innerHTML =
+      '<div class="banner"><h1>' + label(g) + '</h1><div class="sub">' + (joinUs(g) ? "<b>" + joinUs(g) + "</b>" : "") + PV.esc(g.venue.toUpperCase()) + "</div></div>" +
+      '<div class="hero" style="--ac:' + g.away.color + "66;--hc:" + g.home.color + '66">' + teamBlock(g.away, "away") + '<div class="mid">' + mid + "</div>" + teamBlock(g.home, "home") + "</div>" +
+      '<div class="low">' + lines + leaders + "</div>";
+  }
+  var CYCLE = Number(PV.qs("cycle")) || 20;   // seconds per game when more than one is featured
+  var list = [], key = "", pager = null;
+  function message(text) { document.getElementById("main").innerHTML = '<div class="msg"><b>' + PV.esc(text) + '</b><span>LAKERS &amp; CLIPPERS</span></div>'; }
+  function load() {
+    PV.getJSON(ESPN + "?dates=" + dateKey(), "nba-" + dateKey()).then(function (res) {
+      if (!res) { if (!list.length) message("BASKETBALL LOADING"); return; }
+      var games = pick(parse(res.data));
+      if (!games.length) { message("NO LA GAMES TODAY"); list = []; key = ""; return; }
+      list = games;
+      var k = games.map(function (g) { return g.id; }).join(",");
+      if (k !== key) {
+        // a different set of games: restart the rotation from the first one
+        key = k;
+        if (pager) pager.stop();
+        pager = PV.pager(list.length, CYCLE * 1000, function (i) { if (list[i]) render(list[i]); if (PV.directed && list.length > 1 && i === list.length - 1 && pager) pager.stop(); });
+      } else if (list.length === 1) render(list[0]);   // same single game: refresh the score now
+      PV.updated(res);
+    });
+  }
+  load();
+  setInterval(load, 60 * 1000);
+})();
+</script>
+</body>
+</html>
