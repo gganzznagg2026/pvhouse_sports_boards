@@ -54,6 +54,7 @@
   var LOGO_FILE = { WSH: "was" };
   // ?mode=la    -> Los Angeles games only (Rams, Chargers)
   // ?mode=prime -> the big game of the week (Sunday / Monday / Thursday night)
+  // ?mode=monday -> upcoming or live Monday Night Football only
   // no mode     -> original behaviour (LA game if there is one, otherwise the big game)
   var MODE = PV.qs("mode") || "";
   PV.frame({ title: MODE === "la" ? "LOS ANGELES <em>FOOTBALL</em>" : "FEATURED <em>FOOTBALL</em>", source: "SOURCE: ESPN / DRAFTKINGS" });
@@ -99,6 +100,13 @@
     var now = Date.now();
     var recent = function (g) { return g.state !== "post" || now - new Date(g.date) < 4.25 * 3600 * 1000; };
     var soon = function (g) { var dt = new Date(g.date) - now; return dt < 18 * 3600 * 1000; };   // kicks off within 18 hours, or already started
+    if (MODE === "monday") {
+      return games.filter(function (g) {
+        return g.et.day === "Monday" && g.et.hour >= 17 && (g.state === "pre" || g.state === "in");
+      }).sort(function (a, b) {
+        return (b.state === "in") - (a.state === "in") || new Date(a.date) - new Date(b.date);
+      });
+    }
     if (MODE === "prime") { var pg = pickPrime(games, recent); return pg ? [pg] : []; }
     var la = games.filter(function (g) { return (g.away.la || g.home.la) && soon(g) && recent(g); });
     var laLive = la.filter(function (g) { return g.state === "in"; });
@@ -144,6 +152,7 @@
   }
   function label(g) {
     if (/wild card|divisional|championship|super bowl|playoff/i.test(g.note)) return g.note.toUpperCase();
+    if (MODE === "monday") return "MONDAY NIGHT FOOTBALL";
     if (g.prime) {
       var n = { Thursday: "THURSDAY", Sunday: "SUNDAY", Monday: "MONDAY", Saturday: "SATURDAY", Friday: "FRIDAY" }[g.et.day];
       if (n) return n + " NIGHT FOOTBALL";
