@@ -13,6 +13,9 @@
   .sum .pg{margin-left:auto;color:var(--faint)}
   .sum .pager{margin:0 0 0 24px}
   .cards{position:absolute;left:0;right:0;top:60px;bottom:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,1fr);gap:18px 24px}
+  .watch-title{grid-column:1 / -1;display:flex;align-items:center;gap:18px;font-family:"BC";font-weight:800;font-size:27px;letter-spacing:3px;color:var(--amber);border-top:1px solid var(--line2)}
+  .watch-title span{margin-left:auto;font-size:18px;color:var(--dim);letter-spacing:2px}
+  .card.preview{border-color:rgba(255,182,39,.35)}
   .card{background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
   .card.live{border-color:rgba(255,90,79,.45);background:linear-gradient(180deg,rgba(255,90,79,.07),var(--panel) 40%)}
   .tm{flex:1;display:flex;align-items:center;gap:14px;padding:0 20px 0 0;min-width:0}
@@ -101,17 +104,49 @@
       teamRow(g.away, g, g.state === "post" && a > h) + teamRow(g.home, g, g.state === "post" && h > a) +
       '<div class="st">' + st + '<span class="net">' + PV.esc(g.net.toUpperCase()) + "</span></div></div>";
   }
-  function show(games) {
+  // Friday previews use the next Pacific calendar date, independent of player timezone.
+  function saturdayKey(key) {
+    var d = new Date(Date.UTC(Number(key.slice(0, 4)), Number(key.slice(4, 6)) - 1, Number(key.slice(6, 8))));
+    if (d.getUTCDay() !== 5) return null;
+    d.setUTCDate(d.getUTCDate() + 1);
+    return String(d.getUTCFullYear()) + ("0" + (d.getUTCMonth() + 1)).slice(-2) + ("0" + d.getUTCDate()).slice(-2);
+  }
+  function watchGames(games, key) {
+    function tier(g) {
+      if (g.away.rank && g.home.rank) return 0;
+      if (g.away.la || g.home.la) return 1;
+      return 2;
+    }
+    function bestRank(g) { return Math.min(g.away.rank || 99, g.home.rank || 99); }
+    return games.filter(function (g) {
+      var d = new Date(g.date), parts = {};
+      if (isNaN(d.getTime()) || g.state !== "pre") return false;
+      new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(d).forEach(function (p) { parts[p.type] = p.value; });
+      return parts.year + parts.month + parts.day === key &&
+        (g.away.rank || g.home.rank || g.away.la || g.home.la);
+    }).sort(function (a, b) {
+      return tier(a) - tier(b) || bestRank(a) - bestRank(b) ||
+        ((a.away.rank || 99) + (a.home.rank || 99)) - ((b.away.rank || 99) + (b.home.rank || 99)) ||
+        new Date(a.date) - new Date(b.date);
+    }).slice(0, 6);
+  }
+  function show(games, watch) {
+    watch = watch || [];
     var live = 0, up = 0, fin = 0;
     games.forEach(function (g) { if (g.state === "in") live++; else if (g.state === "pre") up++; else fin++; });
     if (games.length > PER_PAGE * MAX_PAGES) games = games.slice(0, PER_PAGE * MAX_PAGES);   // oldest finals drop off
     var pages = Math.max(1, Math.ceil(games.length / PER_PAGE));
     if (pager) pager.stop();
     pager = PV.pager(pages, Math.round(CYCLE_MS / pages), function (i) {
-      document.getElementById("cards").innerHTML = games.slice(i * PER_PAGE, (i + 1) * PER_PAGE).map(card).join("");
+      var cards = document.getElementById("cards");
+      var preview = pages === 1 && games.length > 0 && games.length <= 6 && watch.length > 0;
+      cards.style.gridTemplateRows = preview ? "repeat(" + Math.ceil(games.length / 3) + ", 1fr) 38px repeat(" + Math.ceil(watch.length / 3) + ", 1fr)" : "";
+      cards.innerHTML = games.slice(i * PER_PAGE, (i + 1) * PER_PAGE).map(card).join("") +
+        (preview ? '<div class="watch-title">SATURDAY &bull; GAMES TO WATCH<span>UPCOMING &bull; ALL TIMES PT</span></div>' +
+          watch.map(function (g) { return card(g).replace('class="card ', 'class="card preview '); }).join("") : "");
       document.getElementById("counts").innerHTML =
         '<span class="l"><b class="num">' + live + "</b>LIVE</span>" +
-        '<span class="u"><b class="num">' + up + "</b>UPCOMING</span>" +
+        '<span class="u"><b class="num">' + up + "</b>UPCOMING TODAY</span>" +
         '<span><b class="num">' + fin + "</b>FINAL</span>";
       document.getElementById("pgtxt").textContent = pages > 1 ? "PAGE " + (i + 1) + " OF " + pages : "";
     });
@@ -123,6 +158,14 @@
       if (!games.length) { PV.message("NO COLLEGE GAMES TODAY", "SATURDAY IS COMING"); PV.updated(res); return; }
       show(games);
       PV.updated(res);
+      var key = saturdayKey(PV.todayKey());
+      if (key && games.length <= 6) {
+        PV.getJSON(ESPN + "?limit=500&groups=80&dates=" + key, "ncaaf-watch-" + key).then(function (next) {
+          // A late Friday response must never put Saturday previews on a new day's board.
+          if (!next || saturdayKey(PV.todayKey()) !== key) return;
+          show(games, watchGames(parse(next.data), key));
+        }).catch(function () { /* Today's scoreboard remains usable if previews fail. */ });
+      }
     });
   }
   load();
