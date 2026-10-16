@@ -101,6 +101,9 @@
       if (!document.getElementById("grid")) document.querySelector(".body").innerHTML = '<div class="grid" id="grid"></div>';
       pager = PV.pager(pages, CYCLE * 1000, function (i) {
         document.getElementById("grid").innerHTML = stories.slice(i * PER_PAGE, i * PER_PAGE + PER_PAGE).map(card).join("");
+        // The Director includes a short handoff buffer while the next board loads.
+        // Hold the last news page during that buffer instead of wrapping to page one.
+        if (PV.directed && pages > 1 && i === pages - 1 && pager) pager.stop();
       });
       PV.updated(got[0].res);
     });
