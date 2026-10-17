@@ -77,6 +77,22 @@
     var ab = t.abbreviation === "WAS" ? "WSH" : t.abbreviation;
     return { ab: ab, city: t.location || "", nick: t.shortDisplayName || t.name || ab, color: PV.hex(t.color), rec: rec, score: c.score, lead: lead, la: PV.isLA("nfl", ab) };
   }
+  function safeText(value) {
+    var text = value == null ? "" : String(value).trim();
+    return /^(null|undefined|n\/a)$/i.test(text) ? "" : text;
+  }
+  function safeScore(value) {
+    var text = safeText(value);
+    return /^\d+$/.test(text) ? text : "–";
+  }
+  function gameInterruption(status, notes) {
+    var ty = status.type || {}, description = [ty.name, ty.description, ty.detail, ty.shortDetail].map(safeText).join(" ");
+    var label = /postpon/i.test(description) ? "POSTPONED" : /suspend/i.test(description) ? "SUSPENDED" : /cancel/i.test(description) ? "CANCELED" : /delay/i.test(description) ? "DELAYED" : "";
+    if (!label) return null;
+    var reason = safeText(status.reason) || safeText(ty.reason);
+    if (!reason) reason = [ty.detail, ty.shortDetail].concat((notes || []).map(function (n) { return n.headline; })).map(safeText).filter(function (s) { return /rain|weather|snow|lightning|wet|power|field/i.test(s); })[0] || "REASON NOT YET PROVIDED";
+    return { label: label, reason: reason };
+  }
   function parse(data) {
     return (data.events || []).map(function (e) {
       var c = e.competitions[0], st = c.status || {}, ty = st.type || {}, a = null, h = null, nets = [];
@@ -84,7 +100,7 @@
       (c.broadcasts || []).forEach(function (b) { nets = nets.concat(b.names || []); });
       var o = (c.odds || [])[0] || {}, et = etParts(e.date);
       return {
-        id: e.id, date: e.date, state: ty.state, detail: ty.shortDetail || "", net: nets.join(" / "),
+        id: e.id, date: e.date, state: ty.state, interruption: gameInterruption(st, c.notes), detail: safeText(ty.shortDetail) || safeText(ty.description) || (ty.state === "in" ? "IN PROGRESS" : ty.state === "post" ? "FINAL" : "SCHEDULED"), net: nets.join(" / "),
         venue: [get(c, "venue.fullName"), get(c, "venue.address.city")].filter(Boolean).join(" • "),
         note: ((c.notes || [])[0] || {}).headline || "", et: et,
         prime: et.hour >= 19 && /Thursday|Sunday|Monday/.test(et.day) || (et.hour >= 19 && et.day === "Saturday" && new Date(e.date).getMonth() >= 11),
@@ -171,8 +187,12 @@
   }
   function render(g) {
     var o = g.odds, mid;
-    if (g.state === "pre") mid = '<div class="when">' + PV.fmt(new Date(g.date), { weekday: "short" }).toUpperCase() + " • " + PV.timePT(g.date) + '</div><div class="net">' + PV.esc(g.net.toUpperCase()) + "</div>";
-    else mid = '<div class="big num">' + PV.esc(g.away.score) + "<i>&ndash;</i>" + PV.esc(g.home.score) + "</div>" +
+    if (g.interruption) {
+      mid = '<div class="when" style="font-size:42px;color:var(--amber)">GAME ' + PV.esc(g.interruption.label) + '</div>';
+      if (safeScore(g.away.score) !== "–" && safeScore(g.home.score) !== "–") mid += '<div class="big num" style="font-size:70px">' + safeScore(g.away.score) + '<i>&ndash;</i>' + safeScore(g.home.score) + '</div>';
+      mid += '<div class="net" style="font-size:24px;white-space:normal;overflow-wrap:anywhere">' + PV.esc(g.interruption.reason.toUpperCase()) + '</div><div class="net" style="font-size:20px">AWAITING OFFICIAL UPDATE</div>';
+    } else if (g.state === "pre") mid = '<div class="when">' + PV.fmt(new Date(g.date), { weekday: "short" }).toUpperCase() + " • " + PV.timePT(g.date) + '</div><div class="net">' + PV.esc(g.net.toUpperCase()) + "</div>";
+    else mid = '<div class="big num">' + PV.esc(safeScore(g.away.score)) + "<i>&ndash;</i>" + PV.esc(safeScore(g.home.score)) + "</div>" +
       '<span class="pill ' + (g.state === "in" ? "live" : "final") + '">' + (g.state === "in" ? "LIVE " : "") + PV.esc(g.detail.toUpperCase()) + "</span>";
     var spA = get(o, "pointSpread.away.close.line"), spH = get(o, "pointSpread.home.close.line");
     var favA = spA && spA.charAt(0) === "-", favH = spH && spH.charAt(0) === "-";
