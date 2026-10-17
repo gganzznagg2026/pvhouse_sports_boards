@@ -46,6 +46,7 @@
   .facts{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:24px}
   .fact{background:var(--panel);border:1px solid var(--line);padding:16px 24px}
   .fact label{display:block;font-family:"BC";font-weight:700;font-size:19px;letter-spacing:3px;color:var(--faint)}
+  .facts .fact div{white-space:normal;overflow-wrap:anywhere}
   .fact div{font-family:"BC";font-weight:700;font-size:32px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
@@ -82,8 +83,31 @@
       : PV.fmt(new Date(n.gameDate), { weekday: "short" }).toUpperCase() + " " + PV.timePT(n.gameDate);
     return (POSTSEASON[n.gameType] && n.seriesGameNumber ? "GAME " + n.seriesGameNumber + " \u2022 " : "") + when + (n.ifNecessary === "Y" ? " (IF NEEDED)" : "");
   }
+  function cleanStatus(value) {
+    var text = value == null ? "" : String(value).trim();
+    return /^(null|undefined|n\/a)$/i.test(text) ? "" : text;
+  }
+  function interruption(g) {
+    var s = g.status || {}, detail = cleanStatus(s.detailedState), code = s.codedGameState;
+    if (/postpon/i.test(detail) || code === "D") return "POSTPONED";
+    if (/suspend/i.test(detail) || code === "U") return "SUSPENDED";
+    if (/cancel/i.test(detail) || code === "C") return "CANCELED";
+    if (/delay/i.test(detail) || /^(I|T)$/.test(code || "")) return "DELAYED";
+    return "";
+  }
+  function interruptionReason(g) {
+    var s = g.status || {}, reason = cleanStatus(s.reason);
+    if (reason) return reason;
+    var detail = cleanStatus(s.detailedState);
+    return /rain|weather|snow|lightning|wet|power|field/i.test(detail) ? detail : "REASON NOT YET PROVIDED";
+  }
+  function scoreText(value) {
+    var text = cleanStatus(value);
+    return /^\d+$/.test(text) ? text : "&ndash;";
+  }
   function state(g) {
     var s = g.status || {};
+    if (interruption(g)) return "paused";
     if (s.abstractGameState === "Live" && s.codedGameState !== "P") return "live";
     if (s.abstractGameState === "Final") return "final";
     return "pre";
@@ -92,7 +116,7 @@
 
   // Postseason: every game today. Regular season: LA first, then live games, then what's next.
   function choose(all) {
-    var rank = { live: 0, pre: 1, final: 2 };
+    var rank = { live: 0, paused: 1, pre: 1, final: 2 };
     var sorted = all.slice().sort(function (a, b) {
       return (isLA(a) ? 0 : 1) - (isLA(b) ? 0 : 1) || rank[state(a)] - rank[state(b)] ||
         (state(a) === "final" ? new Date(b.gameDate) - new Date(a.gameDate) : new Date(a.gameDate) - new Date(b.gameDate));
@@ -131,10 +155,14 @@
     var a = get(g, "teams.away.team") || {}, h = get(g, "teams.home.team") || {};
     var as = get(g, "teams.away.score"), hs = get(g, "teams.home.score");
     var mid;
-    if (st === "pre") {
+    if (st === "paused") {
+      mid = '<div class="when" style="color:var(--amber);font-size:46px">GAME ' + interruption(g) + '</div>';
+      if (scoreText(as) !== "&ndash;" && scoreText(hs) !== "&ndash;") mid += '<div class="score num" style="font-size:86px">' + scoreText(as) + ' &ndash; ' + scoreText(hs) + '</div>';
+      mid += '<div class="state">AWAITING MLB UPDATE</div>';
+    } else if (st === "pre") {
       mid = '<div class="when">' + PV.timePT(g.gameDate) + '</div><div class="state"><span class="pill next">FIRST PITCH</span></div>';
     } else {
-      mid = '<div class="score num"><b class="' + (st === "final" && as < hs ? "lose" : "") + '">' + as + '</b><i>&ndash;</i><b class="' + (st === "final" && hs < as ? "lose" : "") + '">' + hs + "</b></div>";
+      mid = '<div class="score num"><b class="' + (st === "final" && as < hs ? "lose" : "") + '">' + scoreText(as) + '</b><i>&ndash;</i><b class="' + (st === "final" && hs < as ? "lose" : "") + '">' + scoreText(hs) + "</b></div>";
       if (st === "live") {
         var off = ls.offense || {};
         mid += '<div class="state"><span class="pill live">' + PV.esc(((ls.inningState || "") + " " + (ls.currentInningOrdinal || "")).toUpperCase()) + "</span>" +
@@ -160,14 +188,16 @@
       '<tr><td class="tm">' + PV.logo("mlb", h.id, h.abbreviation, COLORS[h.id], 46, "lsl") + PV.esc(h.abbreviation) + "</td>" + rowH + rhe(get(ls, "teams.home")) + "</tr></table>";
     // Three fact cards that change with the game state
     var f;
-    if (st === "final") {
+    if (st === "paused") {
+      f = [["GAME STATUS", interruption(g)], ["REASON", interruptionReason(g)], ["BALLPARK", get(g, "venue.name")]];
+    } else if (st === "final") {
       var d = g.decisions || {};
       f = [["WINNING PITCHER", get(d, "winner.fullName")], ["LOSING PITCHER", get(d, "loser.fullName")], ["SAVE", get(d, "save.fullName") || "NONE"]];
       if (POSTSEASON[g.gameType]) f.push(["SERIES", seriesLine(g)]);
       if (nextText(g)) f.push(["NEXT GAME", nextText(g)]);
     } else if (st === "live") {
       f = [["PITCHING", get(ls, "defense.pitcher.fullName")], ["AT BAT", get(ls, "offense.batter.fullName")],
-        ["COUNT", (ls.balls != null ? ls.balls + "-" + ls.strikes : "–") + (ls.outs != null ? "  •  " + ls.outs + " OUT" + (ls.outs === 1 ? "" : "S") : "")]];
+        ["COUNT", (ls.balls != null && ls.strikes != null ? ls.balls + "-" + ls.strikes : "–") + (ls.outs != null ? "  •  " + ls.outs + " OUT" + (ls.outs === 1 ? "" : "S") : "")]];
       if (POSTSEASON[g.gameType]) f.push(["SERIES", seriesLine(g)]);
     } else {
       f = [["FIRST PITCH", PV.fmt(new Date(g.gameDate), { weekday: "short" }).toUpperCase() + " " + PV.timePT(g.gameDate)],
