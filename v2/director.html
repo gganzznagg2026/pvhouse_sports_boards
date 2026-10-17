@@ -51,7 +51,9 @@
       var t = ev.filter(function (e) { return ptKey(new Date(e.date)) === today; });
       var st = function (e) { return get(e, "competitions.0.status.type.state") || get(e, "status.type.state"); };
       var la = function (e, lg) { return (get(e, "competitions.0.competitors") || []).some(function (c) { return PV.isLA(lg, String(lg === "ncaa" ? get(c, "team.id") : get(c, "team.abbreviation"))); }); };
+      var kings = function (e) { return (!e.season || e.season.type !== 1) && (get(e, "competitions.0.competitors") || []).some(function (c) { return /^(LA|LAK)$/.test(get(c, "team.abbreviation") || ""); }); };
       return {
+        kingsToday: t.some(kings), kingsLive: t.some(function (e) { return kings(e) && st(e) === "in"; }),
         ok: !!res, today: t.length,
         mondayFeature: ev.some(function (e) {
           var p = {};
@@ -145,6 +147,7 @@
     // Hockey
     grp = "nhl";
     if (nhl.today) {
+      if (nhl.kingsToday) add("Featured LA Kings", "featured-hockey.html?page=20", 20, nhl.kingsLive ? 2 : 1, nhl.kingsLive ? 3 : 2);
       add("NHL Scores & Lines", "nhl.html?page=18", 36, nhl.live || nhl.laLive("nhl") ? 2 : 1, nhl.live ? 3 : 2);
       add("NHL Standings West", "nhl-standings.html?conf=WEST", 18, 1, 2);
       add("NHL Standings East", "nhl-standings.html?conf=EAST", 18, 1, 2);
